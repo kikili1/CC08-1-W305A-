@@ -52,7 +52,6 @@
 
 #define CONNECT_LED_PIN                     IO_PORTB_02//LED+ LED1/LEDR
 #define IR_LED_PIN                          IO_PORTA_12//C1+  
-#define LED_MOT                             IO_PORTA_06//R6 -
 
 
 #define IR_TX_PIN                           IO_PORTB_06//IR_SEND

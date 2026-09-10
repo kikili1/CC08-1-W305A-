@@ -514,8 +514,7 @@ void cover_led_high_low(void)
 #if TCFG_RGB_ENABLE
 	blt_led_set();
 #endif
-	if(ret || fir_led)
-		gpio_hw_direction_output(IO_PORT_SPILT(LED_MOT),0);
+	
 }
 
 
