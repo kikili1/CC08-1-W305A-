@@ -3491,6 +3491,7 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,vble_slave_send_api,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,MOUSE_CHECK,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,long_key_ir_set,pl
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,printf,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,sys_timeout_add,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,sys_timer_modify,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rf_send_hid_key,pl
@@ -3498,6 +3499,8 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,system_ir_check,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,atv_remote_protocol_deal,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,remote_respod_atv_event,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,system_ir_clrr_key,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,user_ir_learn_timeout,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,memcpy,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,put_buf,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,hid_battery_timer_handler,l
@@ -3505,6 +3508,7 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rckey_active_set,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_key_init,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rckey_idle_query,pl
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,system_ir_rece,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,RGB_CT,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,ATV_STEP,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,RF_STEP,pl
@@ -3517,16 +3521,19 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,_ir_struct,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,bt_led_mode,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,_ir_bool_bit,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,IR_KEY_NUM,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,ir_valid_key,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,_gy_bool_bit,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,_mouse_bool_bit,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,_mouse,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,MOUSE_PRE,pl
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,ir_led_times,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,control_t,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,_rf_bool_bit,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,int_500ms_wait_study_ct,l
--r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,ir_led_times,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,MOUSE_KEY_TOUCH,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rckey_lp_target,pl
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,ir_study_timer,l
 objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,timer5_ir_init,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,system_ir_tran,pl

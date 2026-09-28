@@ -372,6 +372,11 @@ void matrix_key_map_deal(u8 offset)
 		fir_send =1;
 		RF_STEP = 1;
 	}
+	if(tab == K_S1 || tab == K_S2)
+	{
+		fir_send =1;
+		RF_STEP = 1;
+	}
 
 
 #if  TCFG_FCC_SINGLE
@@ -461,26 +466,8 @@ void matrix_key_map_deal(u8 offset)
 	}
 
 
-	if(tab ==K_Sleep)
+	if(tab == K_S1 || tab == K_S2)
 	{
-#if 0
-		if(bt_led_mode)
-		{
-			if(fsys_initok)
-			{
-				log_info("press sleep\n");
-				fkey_wakeUp = 1;
-				extern void ble_advOpen_handle(void);
-				ble_advOpen_handle();
-			}
-			else 
-			{
-				log_info("noinit wake\n");
-				fkey_wakeUp = 1;
-			}
-		}
-#endif
-
 #if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
 		if(fir_study)
 		{
@@ -490,7 +477,10 @@ void matrix_key_map_deal(u8 offset)
 		}
 		flong_key =1;
 		firk_learn =1;
-		IR_KEY_NUM =0;
+		if(tab == K_S1)
+			IR_KEY_NUM =1;
+		else
+			IR_KEY_NUM =2;
 		if(ir_valid_key & (1<<IR_KEY_NUM))
 		{
 			fir_send = 1;

@@ -33,7 +33,7 @@
 
 #define TCFG_GYRO_ENABLE                    DISABLE_THIS_MOUDLE
 #define TCFG_IR_ENABLE                      ENABLE_THIS_MOUDLE
-#define TCFG_IR_STUDY_ENABLE                DISABLE_THIS_MOUDLE
+#define TCFG_IR_STUDY_ENABLE                ENABLE_THIS_MOUDLE
 #define TCFG_CODE_SWITCH                    DISABLE_THIS_MOUDLE
 
 #define TCFG_RGB_ENABLE                     DISABLE_THIS_MOUDLE
