@@ -50,8 +50,8 @@
 #define B_PHASE_PORT                        IO_PORTB_02
 #endif
 
-#define CONNECT_LED_PIN                     IO_PORTB_02//LED+ LED1/LEDR
-#define IR_LED_PIN                          IO_PORTA_12//C1+  
+#define CONNECT_LED_PIN                     IO_PORT_DP//LED+ LED1/LEDR
+#define IR_LED_PIN                          IO_PORT_DM//C1+  
 
 
 #define IR_TX_PIN                           IO_PORTB_06//IR_SEND

@@ -2769,6 +2769,8 @@ objs/apps/app/bsp/cpu/bd49/power_api.c.o
 -r=objs/apps/app/bsp/cpu/bd49/power_api.c.o,port1,pl
 -r=objs/apps/app/bsp/cpu/bd49/power_api.c.o,port2,pl
 -r=objs/apps/app/bsp/cpu/bd49/power_api.c.o,port3,pl
+-r=objs/apps/app/bsp/cpu/bd49/power_api.c.o,port4,pl
+-r=objs/apps/app/bsp/cpu/bd49/power_api.c.o,port5,pl
 objs/apps/app/bsp/cpu/bd49/rtc_app.c.o
 -r=objs/apps/app/bsp/cpu/bd49/rtc_app.c.o,read_current_time,pl
 -r=objs/apps/app/bsp/cpu/bd49/rtc_app.c.o,memset,l
@@ -3605,6 +3607,7 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,app_power_led_handler,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,Connect_led_set,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,gpio_hw_direction_output,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,ir_led_set,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,rcled_idle_query,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,sys_timer_modify,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,sys_timeout_add,l

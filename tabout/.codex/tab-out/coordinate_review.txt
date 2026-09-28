@@ -1,0 +1,61 @@
+TAB_OUT coordinate review
+
+Use this file to bind K/S labels to the visible buttons in the source image.
+Do not use firmware files outside the TAB_OUT input folder as evidence.
+
+Raw keys:
+key	row	column	x	y
+S1	R3	C3	3766.2	6208.8
+S2	R1	C3	4679.8	6208.5
+S3	R3	C1	3766.2	5736.3
+S4	R4	C1	4223.1	5736.0
+S5	R1	C1	4679.8	5736.0
+S6	R3	C2	3766.2	5321.0
+S7	R4	C2	4223.1	5320.7
+S8	R1	C2	4679.8	5320.7
+S9	R3	C0	3766.2	4905.6
+S10	R4	C0	4223.1	4905.3
+S11	R1	C0	4679.8	4905.3
+S12	R2	C0	3766.4	4490.0
+S13	R5	C0	4223.1	4490.0
+S14	R0	C0	4679.8	4490.0
+S15	R5	C4	4223.1	4039.7
+S16	R2	C1	3770.9	3602.2
+S17	R5	C1	4223.1	3587.2
+S18	R0	C1	4675.6	3602.2
+S19	R2	C4	4223.1	3134.7
+S20	R2	C2	3766.4	2684.8
+S21	R5	C2	4223.1	2684.8
+S22	R0	C2	4679.8	2684.8
+S23	R2	C3	3766.4	2173.0
+S24	R5	C3	4223.1	2173.0
+S25	R0	C3	4679.8	2173.0
+
+Candidate layout by Y ascending, each row sorted by X ascending:
+Y1: S23  S24  S25
+Y2: S20  S21  S22
+Y3: S19
+Y4: S16  S17  S18
+Y5: S15
+Y6: S12  S13  S14
+Y7: S9  S10  S11
+Y8: S6  S7  S8
+Y9: S3  S4  S5
+Y10: S1  S2
+
+Candidate layout by Y descending, each row sorted by X ascending:
+Yd1: S1  S2
+Yd2: S3  S4  S5
+Yd3: S6  S7  S8
+Yd4: S9  S10  S11
+Yd5: S12  S13  S14
+Yd6: S15
+Yd7: S16  S17  S18
+Yd8: S19
+Yd9: S20  S21  S22
+Yd10: S23  S24  S25
+
+Candidate layout by X ascending, each column sorted by Y ascending:
+X1: S23  S20  S16  S12  S9  S6  S3  S1
+X2: S24  S21  S19  S17  S15  S13  S10  S7  S4
+X3: S25  S22  S18  S14  S11  S8  S5  S2

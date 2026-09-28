@@ -312,8 +312,8 @@ void rc_key_scan(void)
 		{
 			key_value =matrix_key_table[tab_buf[m]>>4][tab_buf[m]&0xf];
 			key_value &=~0x8000;
-			if(key_value == K_OK)
-				fn_ok = 1;
+			// if(key_value == K_OK)
+			// 	fn_ok = 1;
 			if(key_value == K_Pair1_key1)
 				fn_pair = 1;
 		}
@@ -339,21 +339,21 @@ void rc_key_scan(void)
 //key TABLE
 const u16 matrix_key_table[COW_MAX + COW_ADK][ROW_MAX]=
 {
-//  R1          R2              R3              R4
-{   K_power,    K_left,         K_ok,           K_right }, //c0
-{   K_voice,    K_home,         K_mouse,        K_back }, //c1
-{   K_up,       K_vol_up,       K_down,         K_youtube }, //c2
-{   K_NULL,     K_netflix,      K_vol_down,     K_NULL }, //c3
-{   K_NULL,     K_NULL,         K_NULL,         K_NULL }, //c4
+//  R0          R1          R2              R3          R4          R5
+{   K_back,     K_9,        K_0,            K_7,        K_8,        K_voice }, //c0
+{   K_right,    K_3,        K_left,         K_1,        K_2,        K_ok }, //c1
+{   K_vol_up,   K_6,        K_vol_down,     K_4,        K_5,        K_home }, //c2
+{   K_ch_up,    K_S2,       K_ch_down,      K_S1,       K_NULL,     K_S24 }, //c3
+{   K_NULL,     K_NULL,     K_down,         K_NULL,     K_NULL,     K_up }, //c4
 };
 const u8 matrix_key_ir_table[COW_MAX + COW_ADK][ROW_MAX]=
 {
-//  R1          R2              R3              R4
-{   0x08,       0x47,           0x44,           0x48 }, //c0
-{   0xA4,       0x2D,           0x2F,           0x1A }, //c1
-{   0x45,       0x02,           0x46,           0xFB }, //c2
-{   0xFE,       0xEB,           0x03,           0xFE }, //c3
-{   0xFE,       0xFE,           0xFE,           0xFE }, //c4
+//  R0          R1          R2              R3          R4          R5
+{   0xFE,       0xFE,       0xFE,           0xFE,       0xFE,       0xFE }, //c0
+{   0xFE,       0xFE,       0xFE,           0xFE,       0xFE,       0xFE }, //c1
+{   0xFE,       0xFE,       0xFE,           0xFE,       0xFE,       0xFE }, //c2
+{   0xFE,       0xFE,       0xFE,           0xFE,       0xFE,       0xFE }, //c3
+{   0xFE,       0xFE,       0xFE,           0xFE,       0xFE,       0xFE }, //c4
 };
 
 void matrix_key_map_deal(u8 offset)
@@ -398,15 +398,15 @@ void matrix_key_map_deal(u8 offset)
 			tab = 0;
 		}
 	}
-	if(tab == K_voice && (BT_PAIR_LED_CONNECT ^ bt_led_mode))
-		{
-			ble_set_fix_pwr(7);
-			extern void user_key_deal(u8 , u8);
-			user_key_deal(0,0);
-			fir_send = 1;
-			pair_step = 0;
-			tab = 0;
-		}
+	// if(tab == K_voice && (BT_PAIR_LED_CONNECT ^ bt_led_mode))
+	// 	{
+	// 		ble_set_fix_pwr(7);
+	// 		extern void user_key_deal(u8 , u8);
+	// 		user_key_deal(0,0);
+	// 		fir_send = 1;
+	// 		pair_step = 0;
+	// 		tab = 0;
+	// 	}
 	if(fn_ok && (BT_PAIR_LED_CONNECT ^ bt_led_mode))
 	{
 		if(tab == K_VOLD)

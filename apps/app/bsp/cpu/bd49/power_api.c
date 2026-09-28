@@ -67,48 +67,47 @@ bool is_port_edge_wkup_source(void)
 
 void rckey_active_set(P33_IO_WKUP_EDGE edge);
 struct _p33_io_edge_wakeup_config port0 = {
-    .gpio =  IO_PORTB_01,//R0
+    .gpio = IO_PORTA_05,//R0
     .pullup_down_enable = 1,
     .filter = PORT_WKUP_FILTER,
     .edge = FALLING_EDGE,
     .callback = rckey_active_set,
 };
 struct _p33_io_edge_wakeup_config port1 = {
-    .gpio = IO_PORTA_06,
+    .gpio = IO_PORTA_06,//R1
     .pullup_down_enable = 1,
     .filter = PORT_WKUP_FILTER,
     .edge = FALLING_EDGE,
     .callback = rckey_active_set,
 };
 struct _p33_io_edge_wakeup_config port2 = {
-    .gpio = IO_PORTA_05,
+    .gpio = IO_PORTA_00,//R2
     .pullup_down_enable = 1,
     .filter = PORT_WKUP_FILTER,
     .edge = FALLING_EDGE,
     .callback = rckey_active_set,
 };
 struct _p33_io_edge_wakeup_config port3 = {
-    .gpio = IO_PORTA_11,
+    .gpio = IO_PORTA_15,//R3
     .pullup_down_enable = 1,
     .filter = PORT_WKUP_FILTER,
     .edge = FALLING_EDGE,
     .callback = rckey_active_set,
 };
-/* struct _p33_io_edge_wakeup_config port4 = {
-    .gpio = IO_PORTA_14,
+struct _p33_io_edge_wakeup_config port4 = {
+    .gpio = IO_PORTA_14,//R4
     .pullup_down_enable = 1,
     .filter = PORT_WKUP_FILTER,
     .edge = FALLING_EDGE,
     .callback = rckey_active_set,
 };
-struct _p33_io_edge_wakeup_config port6 = {
-    .gpio =  IO_PORTA_06,//R6
+struct _p33_io_edge_wakeup_config port5 = {
+    .gpio = IO_PORTB_01,//R5
     .pullup_down_enable = 1,
     .filter = PORT_WKUP_FILTER,
     .edge = FALLING_EDGE,
     .callback = rckey_active_set,
 };
- */
 #if TESTBOX_UART_UPDATE_EN
 void testbox_uart_active_set();
 struct _p33_io_edge_wakeup_config port1 = {
@@ -126,8 +125,8 @@ void power_io_wakeup_init(void)
     p33_io_wakeup_port_init(&port1);
     p33_io_wakeup_port_init(&port2);
     p33_io_wakeup_port_init(&port3);
-    // p33_io_wakeup_port_init(&port4);
-    //  p33_io_wakeup_port_init(&port6);
+    p33_io_wakeup_port_init(&port4);
+    p33_io_wakeup_port_init(&port5);
 #if TESTBOX_UART_UPDATE_EN
     p33_io_wakeup_port_init(&port1);
 #endif
