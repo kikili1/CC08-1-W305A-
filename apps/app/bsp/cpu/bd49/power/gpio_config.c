@@ -75,7 +75,8 @@ void board_set_soft_poweroff(void)
 
     __gpio_uninit();
 	rc_key_matrix_sleep();
-    gpio_hw_direction_output(IO_PORT_SPILT(CONNECT_LED_PIN),0);
+	/* CONNECT_LED_PIN is active-low; keep it off while entering soft poweroff. */
+	Connect_led_set(0);
     gpio_hw_direction_output(IO_PORT_SPILT(IR_TX_PIN),0);
 #if TCFG_CODE_SWITCH
     code_switch_ioClose();
@@ -131,7 +132,8 @@ static void __mask_io_cfg()
     boot_soft_flag.flag0.boot_ctrl.sfc_fast_boot = 1;                                 //配置1快速启动
 
     boot_soft_flag.flag1.boot_ctrl.usbdm = SOFTFLAG_HIGH_RESISTANCE;
-    boot_soft_flag.flag1.boot_ctrl.usbdp = SOFTFLAG_HIGH_RESISTANCE;
+    /* LED cathode control: keep DP high (off), never floating, in soft poweroff. */
+    boot_soft_flag.flag1.boot_ctrl.usbdp = SOFTFLAG_OUT1;
 
     boot_soft_flag.flag2.boot_ctrl.pa0 = SOFTFLAG_HIGH_RESISTANCE;
     boot_soft_flag.flag2.boot_ctrl.uart_key_port_pull_down = 0;
@@ -167,6 +169,8 @@ static void __gpio_uninit()
 #endif
     for (u8 i = 0; i < sizeof(rckey_row); i++) 
         PORT_PROTECT(rckey_row[i]);
+	/* CONNECT_LED_PIN is the active-low LED cathode and must remain driven high. */
+	PORT_PROTECT(CONNECT_LED_PIN);
 
 #if TCFG_CODE_SWITCH
     // PORT_PROTECT(IO_PORTB_03);

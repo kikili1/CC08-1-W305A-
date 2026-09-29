@@ -43,6 +43,27 @@ static u16  int_pair_bias_timer=0;
 static u16  int_pair_led_timer=0;
 static u16  int_blt_15s_timer =0;
 
+/* Disconnected key indication: 320 ms on/off, exactly two flashes per press. */
+#define DISCON_KEY_LED_STEP_MS          320
+static u16 int_discon_key_led_timer=0;
+static u8 discon_key_led_phase=0;
+static u8 discon_key_led_on=0;
+
+static void discon_key_led_handle(void)
+{
+	int_discon_key_led_timer =0;
+	if(!discon_key_led_phase)
+		return;
+
+	discon_key_led_phase--;
+	discon_key_led_on = (discon_key_led_phase==2);
+	if(discon_key_led_phase)
+		int_discon_key_led_timer =sys_timeout_add(NULL,discon_key_led_handle,DISCON_KEY_LED_STEP_MS);
+	else
+		fir_led_ir =0;
+	cover_led_high_low();
+}
+
 int int_gy_sleep_timer = 0;
 #if TCFG_GYRO_ENABLE
 #define SYS_GY_SLEEP_TIME			30*1000//MIN
@@ -219,11 +240,30 @@ void sys_led_tick(void)
 void sys_power_led_pmu(void)
 {
 	static bt_pair_led_enum old_status=0xff;
+	static u8 old_key_doing=0;
+
+	if(fkey_doing && !old_key_doing && bt_led_mode==BT_PAIR_LED_DISCON && !discon_key_led_phase)
+	{
+		/* Ignore release/bounce until this complete two-flash sequence finishes. */
+		discon_key_led_phase =4;
+		discon_key_led_on =1;
+		fir_led_ir =0;
+		int_discon_key_led_timer =sys_timeout_add(NULL,discon_key_led_handle,DISCON_KEY_LED_STEP_MS);
+	}
+	old_key_doing =fkey_doing;
 
 	if(old_status^bt_led_mode)//ble状态更新，需要更新POWEROFF计时
 	{
 		old_status =bt_led_mode;
 		log_info("bt_led_mode =%d\n",bt_led_mode);
+		if(bt_led_mode!=BT_PAIR_LED_DISCON && discon_key_led_phase)
+		{
+			if(int_discon_key_led_timer)
+				sys_timer_del(int_discon_key_led_timer);
+			int_discon_key_led_timer =0;
+			discon_key_led_phase =0;
+			discon_key_led_on =0;
+		}
 
 		sys_power_off_time();
 	}
@@ -252,7 +292,7 @@ void sys_power_led_pmu(void)
 				int_pair_led_timer = 0xffff;//连接状态按键指示灯常亮
 				break;
 			case BT_PAIR_LED_DISCON:
-				int_pair_led_timer = 1;//掉线状态指示灯闪烁
+				int_pair_led_timer = 0;//掉线按键指示由独立的两次320ms闪烁控制
 				break;
 			case BT_PAIR_LED_PAIRING:
 				int_pair_led_timer = SYS_PAIR_LED_FLASH_TIME;
@@ -314,7 +354,7 @@ void sys_power_led_pmu(void)
 		if(!int_pair_bias_timer)
 			int_pair_bias_timer =sys_timer_add(NULL,sys_bias_led_handle,80);
 	}
-	if(fir_led || fhogp_open)
+	if(fir_led || fhogp_open || discon_key_led_phase)
 		is_rcled_active =30;
 
 	if(fir_star)
@@ -525,6 +565,10 @@ void cover_led_high_low(void)
 			ret = Connect_led_set(1);
 		else ret = Connect_led_set(0);
 	}
+	else if(discon_key_led_phase)
+	{
+		ret = Connect_led_set(discon_key_led_on);
+	}
 	else if(fir_led)
 	{
 		if(fir_led_ir)
@@ -536,7 +580,7 @@ void cover_led_high_low(void)
 			ret = Connect_led_set(1);
 		else ret = Connect_led_set(0);
 	}
-	if(fgyro_calib||fkey_pair)
+	if(fgyro_calib||fkey_pair || firk_clrr || firk_learn)
 		ret = Connect_led_set(1);
 #if TCFG_RGB_ENABLE
 	blt_led_set();
