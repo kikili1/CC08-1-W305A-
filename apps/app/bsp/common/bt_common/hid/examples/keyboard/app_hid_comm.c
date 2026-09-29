@@ -55,7 +55,7 @@
 //2.4G模式： 0---ble ,非0 2.4G配对码
 #define CFG_RF_24G_CODE_ID  (0)
 
-static const u8 remoter_name1[] = "BT-RC";//RemoteG10 HC MG4 BT Remote C31BLE   A98RMV1  TV98   Y33PRO    HE TVBOX    TV BOX    TVS-91   smoontv  TVS-93  
+static const u8 remoter_name1[] = "VGEM BRC-001";//RemoteG10 HC MG4 BT Remote C31BLE   A98RMV1  TV98   Y33PRO    HE TVBOX    TV BOX    TVS-91   smoontv  TVS-93  
 
 typedef enum {
     HID_MODE_NULL = 0,

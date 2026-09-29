@@ -133,8 +133,8 @@ extern sound_out_obj rec_sound;
  **************************************************************/
 #define AUDIO_SYNC_INTERVAL 350
 #define GG_TIMEROUT1        3000
-#define GG_TIMEROUT2        15000
-#define AOSP_TIMEROUT       15000
+#define GG_TIMEROUT2        10000
+#define AOSP_TIMEROUT       10000
 
 struct version
 {

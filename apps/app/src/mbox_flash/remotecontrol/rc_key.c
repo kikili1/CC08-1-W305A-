@@ -225,6 +225,7 @@ void rc_key_scan(void)
 {
     u8 row, col,m;
 	u8 tab_buf[10],tab_ct,matrix_event;
+	u8 fn_ok_pressed =0,fn_one_pressed =0;
 	u16 key_value;
 
 	if(key_check)
@@ -312,11 +313,15 @@ void rc_key_scan(void)
 		{
 			key_value =matrix_key_table[tab_buf[m]>>4][tab_buf[m]&0xf];
 			key_value &=~0x8000;
-			// if(key_value == K_OK)
-			// 	fn_ok = 1;
+			if(key_value == K_ok)
+				fn_ok_pressed =1;
+			else if(key_value == K_1)
+				fn_one_pressed =1;
 			if(key_value == K_Pair1_key1)
 				fn_pair = 1;
 		}
+		if((key_len == 2) && fn_ok_pressed && fn_one_pressed)
+			fn_ok =1;
 		void matrix_key_map_deal(u8 );
 		for(m=0;m<tab_ct;m++)
 			matrix_key_map_deal(tab_buf[m]);
@@ -412,7 +417,7 @@ void matrix_key_map_deal(u8 offset)
 	// 		pair_step = 0;
 	// 		tab = 0;
 	// 	}
-	if(fn_ok && (BT_PAIR_LED_CONNECT ^ bt_led_mode))
+	if(fn_ok)
 	{
 		if(tab == K_VOLD)
 		{
@@ -424,7 +429,7 @@ void matrix_key_map_deal(u8 offset)
 			tab = 0;
 		}
 #if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
-		else if(tab == KPd)
+		else if(tab == K_1)
 		{
 			flong_key =1;
 			firk_clrr =1;
@@ -464,6 +469,13 @@ void matrix_key_map_deal(u8 offset)
 		}
 #endif
 	}
+#if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
+	if(firk_clrr)
+	{
+		fir_send =0;
+		tab =0;
+	}
+#endif
 
 
 	if(tab == K_S1 || tab == K_S2)
@@ -740,7 +752,8 @@ void long_key_ir_set(void)
 				RF_STEP = 5;
 				only_notify = 1;
 				// system_ir_clrr_key();
-				ir_led_times =10;
+				fir_led_ir =0;
+				ir_led_times =6;
 			}
 #endif
 		}
