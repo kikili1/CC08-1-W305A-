@@ -21,5 +21,6 @@
 void app_power_init(void);
 void app_power_scan(void);
 u16 app_power_get_vbat(void);
+u16 app_power_get_vbat_now(void);
 
 #endif

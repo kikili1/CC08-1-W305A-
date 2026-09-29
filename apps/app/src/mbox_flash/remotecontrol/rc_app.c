@@ -184,7 +184,7 @@ void rf_rc_app()
             #endif
             break;
         case MSG_POWER_OFF:
-            flow_pow = 1;
+            /* Battery warnings are key-triggered and voltage-banded in rc_key.c. */
             app_power_led_handler();
             break;
         case MSG_BLE_APP_UPDATE_START:

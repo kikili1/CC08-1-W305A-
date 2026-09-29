@@ -1448,6 +1448,7 @@ objs/apps/app/bsp/common/power_manage/app_power_mg.c.o
 -r=objs/apps/app/bsp/common/power_manage/app_power_mg.c.o,adc_add_sample_ch,l
 -r=objs/apps/app/bsp/common/power_manage/app_power_mg.c.o,app_power_scan,pl
 -r=objs/apps/app/bsp/common/power_manage/app_power_mg.c.o,app_power_get_vbat,pl
+-r=objs/apps/app/bsp/common/power_manage/app_power_mg.c.o,app_power_get_vbat_now,pl
 -r=objs/apps/app/bsp/common/power_manage/app_power_mg.c.o,adc_get_voltage,l
 -r=objs/apps/app/bsp/common/power_manage/app_power_mg.c.o,_log,l
 -r=objs/apps/app/bsp/common/power_manage/app_power_mg.c.o,post_msg,l
@@ -3463,7 +3464,6 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o,_rf_bool_bit,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o,log_tag_const_i_NORM,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o,_ir_bool_bit,l
--r=objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o,_system_bool_bit,l
 objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_matrix_col_relase,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,gpio_hw_direction_output,l
@@ -3484,6 +3484,8 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,delay,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_key_matrix_sleep,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,memset,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,app_power_get_vbat_now,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,battery_critical_led_start,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,matrix_key_map_deal,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,post_msg,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,ble_set_fix_pwr,l
@@ -3509,6 +3511,7 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_key_init,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rckey_idle_query,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,system_ir_rece,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,battery_low_led_start,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,RGB_CT,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,ATV_STEP,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,RF_STEP,pl
@@ -3611,6 +3614,8 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,ble_set_fix_pwr,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,cover_led_high_low,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,power_warn_led_handle,pl
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,battery_low_led_start,pl
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,battery_critical_led_start,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,app_power_led_handler,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,Connect_led_set,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,gpio_hw_direction_output,l

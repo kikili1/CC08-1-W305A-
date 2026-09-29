@@ -345,31 +345,60 @@ void sys_gyro_open_sleep_handle(void)//更新gyro休眠时间
 #endif
 
 static u16 int_powerwarn_timer=0;
+static u8 power_warn_led_toggle_left;
+
+static void power_warn_led_stop(void)
+{
+	power_warn_led_toggle_left = 0;
+	flow_pow = 0;
+	fled_pow = 0;
+	if(int_powerwarn_timer)
+	{
+		sys_timer_del(int_powerwarn_timer);
+		int_powerwarn_timer = 0;
+	}
+	cover_led_high_low();
+}
+
 void power_warn_led_handle(void)
 {
-	static u8 power_warn_led_ct=0;
+	if(!power_warn_led_toggle_left)
+	{
+		power_warn_led_stop();
+		return;
+	}
 
 	fled_pow =~fled_pow;
-	// if(++power_warn_led_ct>=6)
-	// {
-	// 	power_warn_led_ct =0;
-	// 	flow_pow =0;
-	// 	if(int_powerwarn_timer)
-	// 	{
-	// 		sys_timer_del(int_powerwarn_timer);
-	// 		int_powerwarn_timer = 0;
-	// 	}
-	// }
+	power_warn_led_toggle_left--;
 	cover_led_high_low();
+	if(!power_warn_led_toggle_left)
+		power_warn_led_stop();
+}
+
+static void battery_led_start(u8 toggle_count, u16 toggle_period_ms)
+{
+	power_warn_led_stop();
+	flow_pow = 1;
+	fled_pow = 1;
+	power_warn_led_toggle_left = toggle_count;
+	cover_led_high_low();
+	int_powerwarn_timer = sys_timer_add(NULL,power_warn_led_handle,toggle_period_ms);
+}
+
+void battery_low_led_start(void)
+{
+	/* 100 ms on/off, ten complete visible flashes, then stay off. */
+	battery_led_start(19,100);
+}
+
+void battery_critical_led_start(void)
+{
+	/* Start on immediately, then toggle every 500 ms for exactly 3 seconds. */
+	battery_led_start(6,500);
 }
 int app_power_led_handler(void)
 {
 	//log_info("----%s", __FUNCTION__);
-	if(flow_pow)
-	{
-		if(!int_powerwarn_timer)
-			int_powerwarn_timer = sys_timer_add(NULL,power_warn_led_handle,500);
-	}
 	return 0;
 }
 
@@ -490,24 +519,22 @@ void cover_led_high_low(void)
 	// }
 	// gpio_hw_direction_output(IO_PORT_SPILT(LED_MOT),1);
 
-	if(fir_led)
+	if(flow_pow)
+	{
+		if(fled_pow)
+			ret = Connect_led_set(1);
+		else ret = Connect_led_set(0);
+	}
+	else if(fir_led)
 	{
 		if(fir_led_ir)
 			ret = Connect_led_set(1);
 		else ret = Connect_led_set(0);
 	}
 	else {
-		if(flow_pow)
-		{
-			if(fled_pow)
-				ret = Connect_led_set(1);
-		 else ret = Connect_led_set(0);
-		}
-		else {
-			if(fled_pair)
-				ret = Connect_led_set(1);
-			else ret = Connect_led_set(0);
-		}
+		if(fled_pair)
+			ret = Connect_led_set(1);
+		else ret = Connect_led_set(0);
 	}
 	if(fgyro_calib||fkey_pair)
 		ret = Connect_led_set(1);

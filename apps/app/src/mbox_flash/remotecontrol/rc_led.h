@@ -18,6 +18,8 @@ void sys_write_sleep(void);
 void sys_power_led_pmu(void);
 void cover_led_high_low(void);
 int app_power_led_handler(void);
+void battery_low_led_start(void);
+void battery_critical_led_start(void);
 void sys_read_vm_powerup(void);
 
 #endif

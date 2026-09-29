@@ -194,8 +194,8 @@ static const char adv_localName[] = "MI RC";
 
 //定义的产品信息,for test
 #define  PNP_VID_SOURCE   0x01
-#define  PNP_VID          0x2b54//0x05d6
-#define  PNP_PID          0x1600 //
+#define  PNP_VID          0x0508//0x05d6
+#define  PNP_PID          0x0110 //
 #define  PNP_PID_VERSION  0x0000 //1.1.11
 
 static u8 PnP_ID[] = {PNP_VID_SOURCE, PNP_VID & 0xFF, PNP_VID >> 8, PNP_PID & 0xFF, PNP_PID >> 8, PNP_PID_VERSION & 0xFF, PNP_PID_VERSION >> 8};

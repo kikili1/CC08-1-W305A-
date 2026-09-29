@@ -13,6 +13,7 @@
 #include "encoder_mge.h"
 #include "rc_gyro.h"
 #include "rc_cswitch.h"
+#include "app_power_mg.h"
 
 #define LOG_TAG_CONST       NORM
 #define LOG_TAG             "[RC_KEY]"
@@ -30,6 +31,20 @@ _bool_int  _system_bool_bit;
 static u8 is_rckey_active=0;
 static u8 pair_step = 0;
 static u32 bt_pair_id = 0;
+
+#define BATTERY_LOW_WARN_MV       2300
+#define BATTERY_CRITICAL_MV       2100
+
+static u8 battery_low_warn_pending;
+
+static void battery_low_warn_after_send(void)
+{
+	if(battery_low_warn_pending)
+	{
+		battery_low_warn_pending = 0;
+		battery_low_led_start();
+	}
+}
 
 u8 RGB_CT = 0;
 u8 ATV_STEP = 0;
@@ -224,13 +239,14 @@ u8 key_scan_sub(u8 col,u8 cur_key_value,u8 *key_buf,u8 key_ct)
 void rc_key_scan(void)
 {
     u8 row, col,m;
-	u8 tab_buf[10],tab_ct,matrix_event;
+	u8 tab_buf[10],tab_ct,matrix_event,block_key_send;
 	u8 fn_ok_pressed =0,fn_one_pressed =0;
-	u16 key_value;
+	u16 key_value,key_voltage;
 
 	if(key_check)
 		key_check_again =1;
 	matrix_event =0;
+	block_key_send =0;
 	tab_ct =0;
 	KEY_P =0;
 // #if TCFG_RGB_ENABLE
@@ -322,13 +338,26 @@ void rc_key_scan(void)
 		}
 		if((key_len == 2) && fn_ok_pressed && fn_one_pressed)
 			fn_ok =1;
-		void matrix_key_map_deal(u8 );
-		for(m=0;m<tab_ct;m++)
-			matrix_key_map_deal(tab_buf[m]);
+		key_voltage = tab_ct ? app_power_get_vbat_now() : 0;
+		if(tab_ct && key_voltage && (key_voltage < BATTERY_CRITICAL_MV))
+		{
+			battery_low_warn_pending = 0;
+			block_key_send = 1;
+			battery_critical_led_start();
+		}
+		else
+		{
+			void matrix_key_map_deal(u8 );
+			for(m=0;m<tab_ct;m++)
+				matrix_key_map_deal(tab_buf[m]);
+			if(tab_ct && key_voltage && (key_voltage < BATTERY_LOW_WARN_MV))
+				battery_low_warn_pending = 1;
+		}
 
 		key_check_again =0;
 
-		matrix_event |=0x1;
+		if(!block_key_send)
+			matrix_event |=0x1;
 
 	}
 
@@ -987,6 +1016,7 @@ void rf_send_hid_key(void)
 {
     u32 ble_status = 0;
     u8 array[11];
+    u8 ir_send_deferred = 0;
     static u8 kb_data[8]={0},muli_key[2]={0},sys_key=0;
 
 	switch(RF_STEP)
@@ -1003,6 +1033,7 @@ void rf_send_hid_key(void)
 						IR_ADDR = 0x09F7;
 						if(system_ir_only_send(IR_ADDR>>8,IR_ADDR&0x00ff,IR_DATA))//红外busy，需要重新发送
 						{
+							ir_send_deferred = 1;
 							int ret = post_msg(1, MSG_MATRIX_KEY);
 							if (ret != 0) {
 								key_printf("error !!! msg pool full \n");
@@ -1069,6 +1100,8 @@ void rf_send_hid_key(void)
 	if(RF_STEP)
 	{
 		RF_STEP = 0;
+		if(!ir_send_deferred)
+			battery_low_warn_after_send();
 		return;
 	}
 
@@ -1115,6 +1148,7 @@ void rf_send_hid_key(void)
 
 	extern void hid_battery_timer_handler(void);
 	hid_battery_timer_handler();
+	battery_low_warn_after_send();
 } 
 static u8 rckey_tick_ct=0;
 void rckey_tick_scan(void)

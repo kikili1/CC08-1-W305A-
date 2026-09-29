@@ -40,11 +40,16 @@ u16 app_power_get_vbat(void)
     return vbat_voltage;
 }
 
+u16 app_power_get_vbat_now(void)
+{
+    return adc_get_voltage(AD_CH_PMU_VBAT) * 4;
+}
+
 void app_power_scan(void)
 {
     static u16 low_power_cnt = 0,battery_val_ct = 0;
     static u16 battery_val = 0;
-    u16 vol = adc_get_voltage(AD_CH_PMU_VBAT) * 4;
+    u16 vol = app_power_get_vbat_now();
     // log_info("vbat voltage : %d", vol);
     if (0 == vol) {
         return;

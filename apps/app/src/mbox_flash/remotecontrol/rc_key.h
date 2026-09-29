@@ -291,7 +291,7 @@ void rc_key_matrix_sleep(void);
 #define K_FCC_SINGLE  K_vol_up  //上电触发单载波产测按键
 #endif
 #define K_Pair1_key1   K_back   //配对方式1中的按键1
-#define K_Pair1_key2   K_ok   //配对方式1中的按键2
+#define K_Pair1_key2   K_home   //配对方式1中的按键2
 /*****************功能按键**************end**/
 
 
