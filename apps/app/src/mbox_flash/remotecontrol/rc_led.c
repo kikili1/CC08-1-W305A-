@@ -446,12 +446,14 @@ int app_power_led_handler(void)
 //+============================================================
 u8 Connect_led_set(u8 en)
 {
-	gpio_hw_direction_output(IO_PORT_SPILT(CONNECT_LED_PIN),!en);
+	gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_13),en);
+	gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_15),!en);
 	return en;
 }
 void ir_led_set(u8 en)
 {
-	gpio_hw_direction_output(IO_PORT_SPILT(IR_LED_PIN),!en);
+	gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_13),en);
+	gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_15),!en);
 }
 #if TCFG_RGB_ENABLE
 static void r_led_set(u8 en)

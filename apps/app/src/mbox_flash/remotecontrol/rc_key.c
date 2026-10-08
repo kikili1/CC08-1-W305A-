@@ -374,11 +374,12 @@ void rc_key_scan(void)
 const u16 matrix_key_table[COW_MAX + COW_ADK][ROW_MAX]=
 {
 //  R0          R1          R2              R3          R4          R5
-{   K_back,     K_9,        K_0,            K_7,        K_8,        K_voice }, //c0
-{   K_right,    K_3,        K_left,         K_1,        K_2,        K_ok }, //c1
-{   K_vol_up,   K_6,        K_vol_down,     K_4,        K_5,        K_home }, //c2
-{   K_ch_up,    K_S2,       K_ch_down,      K_S1,       K_NULL,     K_S24 }, //c3
-{   K_NULL,     K_NULL,     K_down,         K_NULL,     K_NULL,     K_up }, //c4
+{   K_NULL,     K_3,        K_NULL,         K_1,        K_2,        K_NULL }, //c0
+{   K_back,     K_9,        K_0,            K_7,        K_8,        K_voice }, //c1
+{   K_right,    K_S2,       K_left,         K_S1,       K_NULL,     K_ok }, //c2
+{   K_vol_up,   K_6,        K_vol_down,     K_4,        K_5,        K_home }, //c3
+{   K_ch_up,    K_NULL,     K_ch_down,      K_NULL,     K_NULL,     K_S24 }, //c4
+{   K_NULL,     K_NULL,     K_down,         K_NULL,     K_NULL,     K_up }, //c5
 };
 const u8 matrix_key_ir_table[COW_MAX + COW_ADK][ROW_MAX]=
 {
@@ -388,6 +389,7 @@ const u8 matrix_key_ir_table[COW_MAX + COW_ADK][ROW_MAX]=
 {   0xFE,       0xFE,       0xFE,           0xFE,       0xFE,       0xFE }, //c2
 {   0xFE,       0xFE,       0xFE,           0xFE,       0xFE,       0xFE }, //c3
 {   0xFE,       0xFE,       0xFE,           0xFE,       0xFE,       0xFE }, //c4
+{   0xFE,       0xFE,       0xFE,           0xFE,       0xFE,       0xFE }, //c5
 };
 
 void matrix_key_map_deal(u8 offset)

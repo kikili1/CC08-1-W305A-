@@ -10,31 +10,31 @@ PiarA_KEY2:
 Format:
 Sx | Row | RowPin | Column | ColPin | TabKey | TabBLE | TabIR | PNG_IR | PNG_BLE
 
-S1  | R3 | IO_PORTA_15 | C3 | IO_PORTA_13 | K_NULL      | 0x0000 | 0xFE | null | null
-S2  | R1 | IO_PORTA_06 | C3 | IO_PORTA_13 | K_NULL      | 0x0000 | 0xFE | null | null
-S3  | R3 | IO_PORTA_15 | C1 | IO_PORTA_12 | K_1         | 0x001E | 0xFE | null | 1E (07)
-S4  | R4 | IO_PORTA_14 | C1 | IO_PORTA_12 | K_2         | 0x001F | 0xFE | null | 1F (07)
-S5  | R1 | IO_PORTA_06 | C1 | IO_PORTA_12 | K_3         | 0x0020 | 0xFE | null | 20 (07)
-S6  | R3 | IO_PORTA_15 | C2 | IO_PORTA_11 | K_4         | 0x0021 | 0xFE | null | 21 (07)
-S7  | R4 | IO_PORTA_14 | C2 | IO_PORTA_11 | K_5         | 0x0022 | 0xFE | null | 22 (07)
-S8  | R1 | IO_PORTA_06 | C2 | IO_PORTA_11 | K_6         | 0x0023 | 0xFE | null | 23 (07)
-S9  | R3 | IO_PORTA_15 | C0 | IO_PORTA_02 | K_7         | 0x0024 | 0xFE | null | 24 (07)
-S10 | R4 | IO_PORTA_14 | C0 | IO_PORTA_02 | K_8         | 0x0025 | 0xFE | null | 25 (07)
-S11 | R1 | IO_PORTA_06 | C0 | IO_PORTA_02 | K_9         | 0x0026 | 0xFE | null | 26 (07)
-S12 | R2 | IO_PORTA_00 | C0 | IO_PORTA_02 | K_0         | 0x0027 | 0xFE | null | 27 (07)
-S13 | R5 | IO_PORTB_01 | C0 | IO_PORTA_02 | K_voice     | 0x0043 | 0xFE | null | 43 (07)
-S14 | R0 | IO_PORTA_05 | C0 | IO_PORTA_02 | K_back      | 0x1224 | 0xFE | null | 224 (0C)
-S15 | R5 | IO_PORTB_01 | C4 | IO_PORTB_02 | K_up        | 0x1042 | 0xFE | null | 42 (0C)
-S16 | R2 | IO_PORTA_00 | C1 | IO_PORTA_12 | K_left      | 0x1044 | 0xFE | null | 44 (0C)
-S17 | R5 | IO_PORTB_01 | C1 | IO_PORTA_12 | K_ok        | 0x1041 | 0xFE | null | 41 (0C)
-S18 | R0 | IO_PORTA_05 | C1 | IO_PORTA_12 | K_right     | 0x1045 | 0xFE | null | 45 (0C)
-S19 | R2 | IO_PORTA_00 | C4 | IO_PORTB_02 | K_down      | 0x1043 | 0xFE | null | 43 (0C)
-S20 | R2 | IO_PORTA_00 | C2 | IO_PORTA_11 | K_vol_down  | 0x10EA | 0xFE | null | EA (0C)
-S21 | R5 | IO_PORTB_01 | C2 | IO_PORTA_11 | K_home      | 0x1223 | 0xFE | null | 223 (0C)
-S22 | R0 | IO_PORTA_05 | C2 | IO_PORTA_11 | K_vol_up    | 0x10E9 | 0xFE | null | E9 (0C)
-S23 | R2 | IO_PORTA_00 | C3 | IO_PORTA_13 | K_ch_down   | 0x109D | 0xFE | null | 9D (0C)
-S24 | R5 | IO_PORTB_01 | C3 | IO_PORTA_13 | K_NULL      | 0x0000 | 0xFE | null | null
-S25 | R0 | IO_PORTA_05 | C3 | IO_PORTA_13 | K_ch_up     | 0x109C | 0xFE | null | 9C (0C)
+S1  | R3 | IO_PORTA_15 | C2 | IO_PORTA_12 | K_NULL      | 0x0000 | 0xFE | null | null
+S2  | R1 | IO_PORTA_06 | C2 | IO_PORTA_12 | K_NULL      | 0x0000 | 0xFE | null | null
+S3  | R1 | IO_PORTA_06 | C0 | GND         | K_1         | 0x001E | 0xFE | null | 1E (07)
+S4  | R4 | IO_PORTA_14 | C0 | GND         | K_2         | 0x001F | 0xFE | null | 1F (07)
+S5  | R3 | IO_PORTA_15 | C0 | GND         | K_3         | 0x0020 | 0xFE | null | 20 (07)
+S6  | R4 | IO_PORTA_14 | C3 | IO_PORTA_11 | K_4         | 0x0021 | 0xFE | null | 21 (07)
+S7  | R3 | IO_PORTA_15 | C3 | IO_PORTA_11 | K_5         | 0x0022 | 0xFE | null | 22 (07)
+S8  | R1 | IO_PORTA_06 | C3 | IO_PORTA_11 | K_6         | 0x0023 | 0xFE | null | 23 (07)
+S9  | R1 | IO_PORTA_06 | C1 | IO_PORTA_02 | K_7         | 0x0024 | 0xFE | null | 24 (07)
+S10 | R4 | IO_PORTA_14 | C1 | IO_PORTA_02 | K_8         | 0x0025 | 0xFE | null | 25 (07)
+S11 | R3 | IO_PORTA_15 | C1 | IO_PORTA_02 | K_9         | 0x0026 | 0xFE | null | 26 (07)
+S12 | R2 | IO_PORTA_00 | C1 | IO_PORTA_02 | K_0         | 0x0027 | 0xFE | null | 27 (07)
+S13 | R5 | IO_PORTB_01 | C1 | IO_PORTA_02 | K_voice     | 0x0043 | 0xFE | null | 43 (07)
+S14 | R0 | IO_PORTA_05 | C1 | IO_PORTA_02 | K_back      | 0x1224 | 0xFE | null | 224 (0C)
+S15 | R5 | IO_PORTB_01 | C5 | IO_PORTB_02 | K_up        | 0x1042 | 0xFE | null | 42 (0C)
+S16 | R2 | IO_PORTA_00 | C2 | IO_PORTA_12 | K_left      | 0x1044 | 0xFE | null | 44 (0C)
+S17 | R0 | IO_PORTA_05 | C2 | IO_PORTA_12 | K_ok        | 0x1041 | 0xFE | null | 41 (0C)
+S18 | R5 | IO_PORTB_01 | C2 | IO_PORTA_12 | K_right     | 0x1045 | 0xFE | null | 45 (0C)
+S19 | R2 | IO_PORTA_00 | C5 | IO_PORTB_02 | K_down      | 0x1043 | 0xFE | null | 43 (0C)
+S20 | R2 | IO_PORTA_00 | C3 | IO_PORTA_11 | K_vol_down  | 0x10EA | 0xFE | null | EA (0C)
+S21 | R5 | IO_PORTB_01 | C3 | IO_PORTA_11 | K_home      | 0x1223 | 0xFE | null | 223 (0C)
+S22 | R0 | IO_PORTA_05 | C3 | IO_PORTA_11 | K_vol_up    | 0x10E9 | 0xFE | null | E9 (0C)
+S23 | R2 | IO_PORTA_00 | C4 | IO_PORTA_13 | K_ch_down   | 0x109D | 0xFE | null | 9D (0C)
+S24 | R5 | IO_PORTB_01 | C4 | IO_PORTA_13 | K_NULL      | 0x0000 | 0xFE | null | null
+S25 | R0 | IO_PORTA_05 | C4 | IO_PORTA_13 | K_ch_up     | 0x109C | 0xFE | null | 9C (0C)
 
 LED pins:
 LED+:
@@ -42,8 +42,6 @@ LED-:
 
 Row pins:
 static u8 rckey_row[] = {
-    //IO_PORT_DM,    //LEDG
-    //IO_PORT_DP,    //LEDR
     //IO_PORTB_06,    //IR_SEND
     IO_PORTA_05,    //R0
     IO_PORTA_06,    //R1
@@ -54,12 +52,14 @@ static u8 rckey_row[] = {
 };
 
 Column pins:
-static u8 rckey_col[] = { //normal io
-    IO_PORTA_02,    //C0
-    IO_PORTA_12,    //C1
-    IO_PORTA_11,    //C2
-    IO_PORTA_13,    //C3
-    IO_PORTB_02,    //C4  PCB pin 23 marked PA0, fixed to PB2
+static u8 rckey_col[] = { //normal io; C0 is GND/COW_ADK special column, not a normal GPIO
+    //PCB C0-GND   //C0
+
+    IO_PORTA_02,    //C1
+    IO_PORTA_12,    //C2
+    IO_PORTA_11,    //C3
+    IO_PORTA_13,    //C4
+    IO_PORTB_02,    //C5  PCB pin 23 marked PA0, fixed to PB2
 };
 
 Key macro definitions:
@@ -95,22 +95,24 @@ Tab BLE table by column/row:
 const u16 matrix_key_table[COW_MAX + COW_ADK][ROW_MAX]=
 {
 //  R0          R1          R2              R3          R4          R5      
-{   K_back,     K_9,        K_0,            K_7,        K_8,        K_voice }, //c0
-{   K_right,    K_3,        K_left,         K_1,        K_2,        K_ok }, //c1
-{   K_vol_up,   K_6,        K_vol_down,     K_4,        K_5,        K_home }, //c2
-{   K_ch_up,    K_NULL,     K_ch_down,      K_NULL,     K_NULL,     K_NULL }, //c3
-{   K_NULL,     K_NULL,     K_down,         K_NULL,     K_NULL,     K_up }, //c4
+{   K_NULL,     K_1,        K_NULL,         K_3,        K_2,        K_NULL }, //c0
+{   K_back,     K_7,        K_0,            K_9,        K_8,        K_voice }, //c1
+{   K_ok,       K_NULL,     K_left,         K_NULL,     K_NULL,     K_right }, //c2
+{   K_vol_up,   K_6,        K_vol_down,     K_5,        K_4,        K_home }, //c3
+{   K_ch_up,    K_NULL,     K_ch_down,      K_NULL,     K_NULL,     K_NULL }, //c4
+{   K_NULL,     K_NULL,     K_down,         K_NULL,     K_NULL,     K_up }, //c5
 };
 
 Tab BLE pure 16-bit value table by column/row:
 const u16 matrix_key_value_table[COW_MAX + COW_ADK][ROW_MAX]=
 {
 //  R0          R1          R2              R3          R4          R5      
-{   0x1224,     0x0026,     0x0027,         0x0024,     0x0025,     0x0043 }, //c0
-{   0x1045,     0x0020,     0x1044,         0x001E,     0x001F,     0x1041 }, //c1
-{   0x10E9,     0x0023,     0x10EA,         0x0021,     0x0022,     0x1223 }, //c2
-{   0x109C,     0x0000,     0x109D,         0x0000,     0x0000,     0x0000 }, //c3
-{   0x0000,     0x0000,     0x1043,         0x0000,     0x0000,     0x1042 }, //c4
+{   0x0000,     0x001E,     0x0000,         0x0020,     0x001F,     0x0000 }, //c0
+{   0x1224,     0x0024,     0x0027,         0x0026,     0x0025,     0x0043 }, //c1
+{   0x1041,     0x0000,     0x1044,         0x0000,     0x0000,     0x1045 }, //c2
+{   0x10E9,     0x0023,     0x10EA,         0x0022,     0x0021,     0x1223 }, //c3
+{   0x109C,     0x0000,     0x109D,         0x0000,     0x0000,     0x0000 }, //c4
+{   0x0000,     0x0000,     0x1043,         0x0000,     0x0000,     0x1042 }, //c5
 };
 
 Tab IR table by column/row:
@@ -122,4 +124,5 @@ const u8 matrix_key_ir_table[COW_MAX + COW_ADK][ROW_MAX]=
 {   0xFE,       0xFE,       0xFE,           0xFE,       0xFE,       0xFE }, //c2
 {   0xFE,       0xFE,       0xFE,           0xFE,       0xFE,       0xFE }, //c3
 {   0xFE,       0xFE,       0xFE,           0xFE,       0xFE,       0xFE }, //c4
+{   0xFE,       0xFE,       0xFE,           0xFE,       0xFE,       0xFE }, //c5
 };

@@ -6,7 +6,7 @@
 extern u8 RGB_CT;
 #define ROW_MAX	6
 #define COW_MAX	5
-#define COW_ADK               0
+#define COW_ADK               1
 
 #define KEYBOARD_REPORT_ID          0x1
 #define COUSTOM_CONTROL_REPORT_ID   0x2
@@ -25,12 +25,14 @@ static u8 rckey_row[] = {
     IO_PORTA_14,    //R4
     IO_PORTB_01,    //R5
 };
-static u8 rckey_col[] = { //normal io
-    IO_PORTA_02,    //C0
-    IO_PORTA_12,    //C1
-    IO_PORTA_11,    //C2
-    IO_PORTA_13,    //C3
-    IO_PORTB_02,    //C4  PCB pin 23 marked PA0, fixed to PB2
+static u8 rckey_col[] = { //normal io; C0 is GND/COW_ADK special column, not a normal GPIO
+    //PCB C0-GND   //C0
+
+    IO_PORTA_02,    //C1
+    IO_PORTA_12,    //C2
+    IO_PORTA_11,    //C3
+    IO_PORTA_13,    //C4
+    IO_PORTB_02,    //C5  PCB pin 23 marked PA0, fixed to PB2
 };
 
 void rc_matrix_key_init(void);
@@ -281,9 +283,9 @@ void rc_key_matrix_sleep(void);
 #define K_vol_up	0x10E9  //0C
 #define K_ch_down	0x109D  //0C
 #define K_ch_up	0x109C  //0C
-#define K_S1	0xFF01 //BLE unresolved placeholder
-#define K_S2	0xFF02  //BLE unresolved placeholder
-#define K_S24	0x5002  //BLE unresolved placeholder
+#define K_S1	0xFF01  //BLE unresolved placeholder; preserve IR-learning target identity
+#define K_S2	0xFF02  //BLE unresolved placeholder; preserve IR-learning target identity
+#define K_S24	0x5002  //BLE unresolved placeholder; preserve mouse-key semantics
 /*****************此次工程按键***************end**/
 
 /*****************功能按键*************start**/
