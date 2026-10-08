@@ -37,6 +37,96 @@ static u32 bt_pair_id = 0;
 
 static u8 battery_low_warn_pending;
 
+#define VOICE_F10_RELEASE_MS       40
+#define VOICE_F10_RETRY_MS         10
+#define VOICE_F10_IDLE             0
+#define VOICE_F10_PRESS_PENDING    1
+#define VOICE_F10_PRESSED          2
+#define VOICE_F10_RELEASE_PENDING  3
+
+static u8 keyboard_report_cache[8];
+static u8 voice_f10_state;
+static u16 voice_f10_release_timer;
+
+static void voice_f10_release_timeout(void *priv)
+{
+	int ret;
+
+	voice_f10_release_timer = 0;
+	if(voice_f10_state == VOICE_F10_IDLE)
+		return;
+
+	if(voice_f10_state == VOICE_F10_PRESSED)
+		voice_f10_state = VOICE_F10_RELEASE_PENDING;
+	ret = post_msg(1, MSG_MATRIX_KEY);
+	if(ret != 0)
+	{
+		key_printf("voice F10 release msg pool full\n");
+		voice_f10_release_timer = sys_timeout_add(NULL, voice_f10_release_timeout, VOICE_F10_RETRY_MS);
+	}
+}
+
+static void voice_f10_request(void)
+{
+	if(voice_f10_state == VOICE_F10_IDLE)
+		voice_f10_state = VOICE_F10_PRESS_PENDING;
+}
+
+static void voice_f10_hid_process(void)
+{
+	u8 report[8];
+	u8 slot;
+
+	if(voice_f10_state == VOICE_F10_IDLE)
+		return;
+
+	if(BT_PAIR_LED_CONNECT != bt_led_mode)
+	{
+		voice_f10_state = VOICE_F10_IDLE;
+		return;
+	}
+
+	if(voice_f10_state == VOICE_F10_PRESS_PENDING)
+	{
+		memcpy(report, keyboard_report_cache, sizeof(report));
+		for(slot = 2; slot < sizeof(report); slot++)
+		{
+			if(report[slot] == KF10)
+			{
+				voice_f10_state = VOICE_F10_IDLE;
+				return;
+			}
+			if(report[slot] == 0)
+				break;
+		}
+		if(slot >= sizeof(report))
+			return;
+
+		report[slot] = KF10;
+		if(vble_slave_send_api(KEYBOARD_REPORT_ID, report, sizeof(report)) == 0)
+		{
+			voice_f10_state = VOICE_F10_PRESSED;
+			voice_f10_release_timer = sys_timeout_add(NULL, voice_f10_release_timeout, VOICE_F10_RELEASE_MS);
+			if(!voice_f10_release_timer)
+			{
+				voice_f10_state = VOICE_F10_RELEASE_PENDING;
+				post_msg(1, MSG_MATRIX_KEY);
+			}
+		}
+		else if(!voice_f10_release_timer)
+		{
+			voice_f10_release_timer = sys_timeout_add(NULL, voice_f10_release_timeout, VOICE_F10_RETRY_MS);
+		}
+	}
+	else if(voice_f10_state == VOICE_F10_RELEASE_PENDING)
+	{
+		if(vble_slave_send_api(KEYBOARD_REPORT_ID, keyboard_report_cache, sizeof(keyboard_report_cache)) == 0)
+			voice_f10_state = VOICE_F10_IDLE;
+		else if(!voice_f10_release_timer)
+			voice_f10_release_timer = sys_timeout_add(NULL, voice_f10_release_timeout, VOICE_F10_RETRY_MS);
+	}
+}
+
 static void battery_low_warn_after_send(void)
 {
 	if(battery_low_warn_pending)
@@ -539,6 +629,7 @@ void matrix_key_map_deal(u8 offset)
 	
 	if(tab==K_MIC)
 	{
+		voice_f10_request();
 		flong_mic_key =1;
 		fkey_mic =1;
 		ATV_STEP = 0;
@@ -1019,7 +1110,11 @@ void rf_send_hid_key(void)
     u32 ble_status = 0;
     u8 array[11];
     u8 ir_send_deferred = 0;
-    static u8 kb_data[8]={0},muli_key[2]={0},sys_key=0;
+	static u8 muli_key[2]={0},sys_key=0;
+
+	/* RF_STEP分支会提前返回，先保证语音键的F10不被吞掉。 */
+	if(RF_STEP)
+		voice_f10_hid_process();
 
 	switch(RF_STEP)
 	{
@@ -1132,21 +1227,22 @@ void rf_send_hid_key(void)
 		if (BT_PAIR_LED_CONNECT == bt_led_mode)
 			vble_slave_send_api(COUSTOM_CONTROL_REPORT_ID, muli_key, 2);
 	}
-	if((array[4]^ kb_data[0]) || (array[5]^ kb_data[2]) || (array[6]^ kb_data[3]) || (array[7]^ kb_data[4]) || 
-		(array[8]^ kb_data[5]) || (array[9]^ kb_data[6]) || (array[10]^ kb_data[7]))
+	if((array[4]^ keyboard_report_cache[0]) || (array[5]^ keyboard_report_cache[2]) || (array[6]^ keyboard_report_cache[3]) || (array[7]^ keyboard_report_cache[4]) ||
+		(array[8]^ keyboard_report_cache[5]) || (array[9]^ keyboard_report_cache[6]) || (array[10]^ keyboard_report_cache[7]))
 	{
-		kb_data[0] =array[4];
-		kb_data[1] =0;
-		kb_data[2] =array[5];
-		kb_data[3] =array[6];
-		kb_data[4] =array[7];
-		kb_data[5] =array[8];
-		kb_data[6] =array[9];
-		kb_data[7] =array[10];
-		put_buf(kb_data,8);
+		keyboard_report_cache[0] =array[4];
+		keyboard_report_cache[1] =0;
+		keyboard_report_cache[2] =array[5];
+		keyboard_report_cache[3] =array[6];
+		keyboard_report_cache[4] =array[7];
+		keyboard_report_cache[5] =array[8];
+		keyboard_report_cache[6] =array[9];
+		keyboard_report_cache[7] =array[10];
+		put_buf(keyboard_report_cache,8);
 		if (BT_PAIR_LED_CONNECT == bt_led_mode)
-			vble_slave_send_api(KEYBOARD_REPORT_ID, kb_data, 8);
+			vble_slave_send_api(KEYBOARD_REPORT_ID, keyboard_report_cache, 8);
 	}
+	voice_f10_hid_process();
 
 	extern void hid_battery_timer_handler(void);
 	hid_battery_timer_handler();

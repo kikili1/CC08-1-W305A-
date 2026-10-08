@@ -271,7 +271,7 @@ void rc_key_matrix_sleep(void);
 #define K_8	0x0025  //07
 #define K_9	0x0026  //07
 #define K_0	0x0027  //07
-#define K_voice	0x0043  //07
+#define K_voice	K_MIC   //保留语音键原有状态机，F10由独立一次性HID报告发送
 #define K_back	0x1224  //0C
 #define K_up	0x1042  //0C
 #define K_left	0x1044  //0C

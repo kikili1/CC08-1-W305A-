@@ -31,7 +31,7 @@
 
 #define TCFG_UART0_ENABLE                   DISABLE_THIS_MOUDLE
 
-#define TCFG_GYRO_ENABLE                    DISABLE_THIS_MOUDLE
+#define TCFG_GYRO_ENABLE                    ENABLE_THIS_MOUDLE
 #define TCFG_IR_ENABLE                      ENABLE_THIS_MOUDLE
 #define TCFG_IR_STUDY_ENABLE                ENABLE_THIS_MOUDLE
 #define TCFG_CODE_SWITCH                    DISABLE_THIS_MOUDLE
