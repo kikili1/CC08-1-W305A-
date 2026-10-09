@@ -251,6 +251,9 @@ void matrix_key_row_status(enum gpio_mode mode)
 static void clr_bool_key(void)
 {
 	flong_key =0;
+	fkey_pair =0;
+	firk_learn =0;
+	firk_clrr =0;
 	fn_pair =0;
 	fn_ok =0;
 	fir_send =0;
@@ -356,18 +359,17 @@ void rc_key_scan(void)
 	m = (~key_value)&krow_num;
 	tab_ct =key_scan_sub(col,m,tab_buf,tab_ct);
 
-	if(!m)
+	/* Scan matrix columns even while a C0/GND key is held.
+	 * Grounded rows belong to C0, not to every driven column. */
+	for (col = COW_ADK; col < COW_MAX+COW_ADK; col ++)
 	{
-		for (col = COW_ADK; col < COW_MAX+COW_ADK; col ++)
-		{
-			gpio_hw_direction_output(IO_PORT_SPILT(rckey_col[col-COW_ADK]),0);
-			delay(50);
-			key_value = 0;
-			for (row = 0; row < sizeof(rckey_row); row ++)
-				key_value |= gpio_read(rckey_row[row])<<row;
-			
-			tab_ct =key_scan_sub(col,key_value,tab_buf,tab_ct);
-		}
+		gpio_hw_direction_output(IO_PORT_SPILT(rckey_col[col-COW_ADK]),0);
+		delay(50);
+		key_value = 0;
+		for (row = 0; row < sizeof(rckey_row); row ++)
+			key_value |= gpio_read(rckey_row[row])<<row;
+		key_value |= m;
+		tab_ct =key_scan_sub(col,key_value,tab_buf,tab_ct);
 	}
 	matrix_key_row_status(PORT_INPUT_PULLUP_100K);
 #if TCFG_RGB_ENABLE
@@ -385,8 +387,7 @@ void rc_key_scan(void)
 			fkey_blt_rem =0;
 		}
 		is_rckey_active =35;
-		if(key_len - 1)
-			fkey_double_pre = 1;
+		fkey_double_pre = (key_len > 1);
 	}
 	else {
 		fkey_doing =0;
@@ -413,6 +414,17 @@ void rc_key_scan(void)
 		key_check = 0;
 		memset(&_key, 0, sizeof(KEY_STRUCT));
 		clr_bool_key();
+		/* Rebuild the full held-key list from accepted column states.
+		 * Unchanged keys must participate in sequential combo presses. */
+		tab_ct = 0;
+		for(col=0;col<COW_MAX+COW_ADK;col++)
+		{
+			for(row=0;row<ROW_MAX;row++)
+			{
+				if((PRE_BUFF[col] & (1 << row)) && tab_ct < sizeof(tab_buf))
+					tab_buf[tab_ct++] = (col << 4) | row;
+			}
+		}
 		// log_info("matrix_event\n");
 		// put_buf(tab_buf,tab_ct);
 		for(m=0;m<tab_ct;m++)
