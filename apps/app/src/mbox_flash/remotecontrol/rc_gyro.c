@@ -1096,6 +1096,28 @@ static u8 gyro_read(u8 *buf, u8 addr,u8 gy_reg, u8 len)
 	return 0;
 }
 
+void gyro_debug_state_print(void)
+{
+#if TCFG_UART0_ENABLE
+    static u8 last_idle = 0xff;
+    static u32 last_tick;
+    u8 active = is_gyro_active;
+    u8 idle = !active;
+    u32 now = SYS_TIMER_JIFFIES;
+
+    /* Use the existing app loop; do not add a timer that wakes the MCU. */
+    if (idle == last_idle &&
+        (idle || (u32)(now - last_tick) < sys_timer_msecs_to_jiffies(1000))) {
+        return;
+    }
+    last_idle = idle;
+    last_tick = now;
+    printf("[GYRO_LP] active=%u idle=%u power=%u scan=%u sleep_timer=%d "
+           "inside=%u init=%u mouse=%u moving=%u key=%u\n",
+           active, idle, gy_pwg, gy_scan_timer, int_gy_sleep_timer,
+           fgy_inside, fgy_initi, fm_open, fm_doing, fkey_doing);
+#endif
+}
 static u8 gyro_idle_query(void)
 {
 	return !is_gyro_active;

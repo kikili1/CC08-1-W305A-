@@ -239,6 +239,9 @@ void sys_led_tick(void)
 
 void sys_power_led_pmu(void)
 {
+#if TCFG_GYRO_ENABLE && TCFG_UART0_ENABLE
+    gyro_debug_state_print();
+#endif
 	static bt_pair_led_enum old_status=0xff;
 	static u8 old_key_doing=0;
 
@@ -446,8 +449,12 @@ int app_power_led_handler(void)
 //+============================================================
 u8 Connect_led_set(u8 en)
 {
-	gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_13),en);
-	gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_15),!en);
+	if(en)
+	{
+		gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_13),en);
+		gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_15),!en);
+	}
+	
 	return en;
 }
 void ir_led_set(u8 en)

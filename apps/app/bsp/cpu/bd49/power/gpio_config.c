@@ -170,7 +170,7 @@ static void __gpio_uninit()
     for (u8 i = 0; i < sizeof(rckey_row); i++) 
         PORT_PROTECT(rckey_row[i]);
 	/* CONNECT_LED_PIN is the active-low LED cathode and must remain driven high. */
-	PORT_PROTECT(CONNECT_LED_PIN);
+	// PORT_PROTECT(CONNECT_LED_PIN);
 
 #if TCFG_CODE_SWITCH
     // PORT_PROTECT(IO_PORTB_03);

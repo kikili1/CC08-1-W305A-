@@ -3625,6 +3625,7 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_gyro.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_gyro.c.o,post_msg,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_gyro.c.o,sys_gyro_offset_save,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_gyro.c.o,my_abs,pl
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_gyro.c.o,gyro_debug_state_print,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_gyro.c.o,soft_iic_start,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_gyro.c.o,soft_iic_tx_byte,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_gyro.c.o,soft_iic_stop,l

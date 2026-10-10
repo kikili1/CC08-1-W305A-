@@ -11,7 +11,7 @@
 
 #define NO_CONFIG_PORT						(-1)
 
-#define TCFG_XINGWEI_BUILT					ENABLE_THIS_MOUDLE	
+#define TCFG_XINGWEI_BUILT					ENABLE_THIS_MOUDLE
 #define TCFG_AOSP_BUILT                     ENABLE_THIS_MOUDLE
 #define TCFG_ATV_BUILT                      ENABLE_THIS_MOUDLE
 #define TCFG_FCC_SINGLE                     DISABLE_THIS_MOUDLE
@@ -39,9 +39,9 @@
 #define TCFG_RGB_ENABLE                     DISABLE_THIS_MOUDLE
 #if TCFG_RGB_ENABLE
 #define LED_MOT                             IO_PORTA_02
-#define R_LED_PIN                           IO_PORTA_06   
-#define G_LED_PIN                           IO_PORTB_01  
-#define B_LED_PIN                           IO_PORTB_02    
+#define R_LED_PIN                           IO_PORTA_06
+#define G_LED_PIN                           IO_PORTB_01
+#define B_LED_PIN                           IO_PORTB_02
 #endif
 
 
@@ -50,8 +50,8 @@
 #define B_PHASE_PORT                        IO_PORTB_02
 #endif
 
-#define CONNECT_LED_PIN                     IO_PORT_DP//LED+ LED1/LEDR
-#define IR_LED_PIN                          IO_PORT_DM//C1+  
+// #define CONNECT_LED_PIN                     IO_PORT_DM//LED+ LED1/LEDR
+#define IR_LED_PIN                          IO_PORT_DM//C1+
 
 
 #define IR_TX_PIN                           IO_PORTB_06//IR_SEND

@@ -28,6 +28,7 @@ void system_gyro_power_save_read(void);
 void sys_gyro_open_sleep_handle(void);
 void gyro_step_read(u8 *);
 void system_gyro_check(void);
+void gyro_debug_state_print(void);
 void gyro_read_defult(s16  *FIFO);
 void sys_gyro_offset_save(void);
 u8 tolerance_sub(s16 dat,s8 *co);
