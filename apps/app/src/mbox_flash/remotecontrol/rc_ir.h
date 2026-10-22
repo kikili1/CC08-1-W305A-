@@ -34,6 +34,7 @@ typedef union
 
 extern u8	ir_led_times;
 extern u8	IR_KEY_NUM;
+extern u8 ir_learn_pending;
 extern	u16 ir_valid_key;
 extern u16  ir_study_timer;
 extern u8 int_500ms_wait_study_ct;
@@ -45,6 +46,7 @@ void system_ir_check(void);
 void system_ir_tran(void);
 void system_ir_rece(void);
 void user_ir_learn_timeout(void);
+void user_ir_learn_save(void);
 
 
 u8 ir_set_continue(void);

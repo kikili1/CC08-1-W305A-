@@ -36,6 +36,7 @@ static u32 bt_pair_id = 0;
 #define BATTERY_CRITICAL_MV       2100
 
 static u8 battery_low_warn_pending;
+static u8 ir_learn_combo;
 
 #define VOICE_F10_RELEASE_MS       40
 #define VOICE_F10_RETRY_MS         10
@@ -253,6 +254,7 @@ static void clr_bool_key(void)
 	flong_key =0;
 	fkey_pair =0;
 	firk_learn =0;
+	ir_learn_combo =0;
 	firk_clrr =0;
 	fn_pair =0;
 	fn_ok =0;
@@ -334,6 +336,7 @@ void rc_key_scan(void)
     u8 row, col,m;
 	u8 tab_buf[10],tab_ct,matrix_event,block_key_send;
 	u8 fn_ok_pressed =0,fn_one_pressed =0;
+	u8 s1_pressed =0,s2_pressed =0;
 	u16 key_value,key_voltage;
 
 	if(key_check)
@@ -430,6 +433,8 @@ void rc_key_scan(void)
 		for(m=0;m<tab_ct;m++)
 		{
 			key_value =matrix_key_table[tab_buf[m]>>4][tab_buf[m]&0xf];
+			if(key_value == K_S1) s1_pressed =1;
+			else if(key_value == K_S2) s2_pressed =1;
 			key_value &=~0x8000;
 			if(key_value == K_ok)
 				fn_ok_pressed =1;
@@ -440,6 +445,7 @@ void rc_key_scan(void)
 		}
 		if((key_len == 2) && fn_ok_pressed && fn_one_pressed)
 			fn_ok =1;
+		ir_learn_combo = (key_len == 2) && s1_pressed && s2_pressed;
 		key_voltage = tab_ct ? app_power_get_vbat_now() : 0;
 		if(tab_ct && key_voltage && (key_voltage < BATTERY_CRITICAL_MV))
 		{
@@ -505,6 +511,30 @@ void matrix_key_map_deal(u8 offset)
 
 	tab =matrix_key_table[tab_h][tab_l];
 	IR_DATA =matrix_key_ir_table[tab_h][tab_l];
+#if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
+	/* Handle learning before normal IR/HID mapping. */
+	if(fir_study)
+	{
+		fir_send =0;
+		fir_study_send =0;
+		if(key_len == 1 && ir_learn_pending && (tab == K_S1 || tab == K_S2))
+		{
+			IR_KEY_NUM = (tab == K_S1) ? 1 : 2;
+			RF_STEP =8;
+		}
+		return;
+	}
+	if(ir_learn_combo)
+	{
+		flong_key =1;
+		firk_learn =1;
+		fir_send =0;
+		fir_study_send =0;
+		RF_STEP =0;
+		return;
+	}
+#endif
+
 	if((BT_PAIR_LED_CONNECT ^ bt_led_mode) && !fkey_double_pre)//ir data
 	{
 		fir_send =1;
@@ -614,14 +644,6 @@ void matrix_key_map_deal(u8 offset)
 	if(tab == K_S1 || tab == K_S2)
 	{
 #if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
-		if(fir_study)
-		{
-			RF_STEP = 7;
-			// user_ir_learn_timeout();
-			return;
-		}
-		flong_key =1;
-		firk_learn =1;
 		if(tab == K_S1)
 			IR_KEY_NUM =1;
 		else
@@ -1002,7 +1024,9 @@ void long_key_ir_set(void)
 			fir_led_ir =1;
 		if(fir_study)
 		{
-			if(fir_study_star)
+			if(ir_learn_pending)
+				fir_led_ir =1;
+			else if(fir_study_star)
 			{
 				if(++int_ir_led_fre_ct>=4)//慢闪频率控制
 				{
@@ -1196,6 +1220,11 @@ void rf_send_hid_key(void)
 			array[0] =0x39;
 			array[1] =dpi_data;
 			syscfg_write(CFG_USER_dpi_INDEX, array, 2);
+#endif
+			break;
+		case 8://save received IR to the selected key
+#if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
+			user_ir_learn_save();
 #endif
 			break;
 		case 7://ir_study_stop

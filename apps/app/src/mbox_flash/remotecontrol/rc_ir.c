@@ -40,6 +40,7 @@ _bool_int  _ir_bool_bit;
 
 u8  ir_led_times;
 u8	IR_KEY_NUM;
+u8 ir_learn_pending;
 u16 IR_STEP;
 u32 max_time;
 u32 dat_Period;
@@ -307,7 +308,6 @@ void user_ir_learn_succ(void)
 
 	}
 	else {
-		ir_led_times =10;
 		//дflash
 		//0x00	0xab  id
 		//4~27	IR_STUDY_HL
@@ -324,12 +324,32 @@ void user_ir_learn_succ(void)
 		// for(i=0;i<study_buf_ct+1;i++)
 		// 	log_info("buf[%d] %x",i,IR_STUDY_ARRAY[i+4+24+24]);
 
-		syscfg_write(CFG_IR_KEY_NUM_BEGIN+IR_KEY_NUM,IR_STUDY_ARRAY,4+24+24+study_buf_ct+1);
-		ir_valid_key |=1<<IR_KEY_NUM;
-		user_ir_learn_timeout();
-		fir_led_long = 1;
+		/* Wait for a destination key before writing the decoded frame. */
+		ir_learn_pending =1;
+		fir_learn_finish =1;
+		fir_led_ir =1;
+		user_ir_learn_timer_hdl = sys_timeout_add(NULL, user_ir_learn_timeout, 20000);
 
 	}
+}
+
+/* MSG_MATRIX_KEY context: flash writes stay out of the scan interrupt. */
+void user_ir_learn_save(void)
+{
+	int len =4+24+24+study_buf_ct+1;
+	if(!fir_study || !ir_learn_pending || IR_KEY_NUM < 1 || IR_KEY_NUM > 2)
+		return;
+	if(syscfg_write(CFG_IR_KEY_NUM_BEGIN+IR_KEY_NUM,IR_STUDY_ARRAY,len) != len)
+		return;
+	ir_valid_key |=1<<IR_KEY_NUM;
+	ir_learn_pending =0;
+	fir_learn_finish =0;
+	fir_led_ir =0;
+	ir_led_times =10;
+	if(user_ir_learn_timer_hdl)
+		sys_timer_modify(user_ir_learn_timer_hdl,20000);
+	if(!ir_study_timer)
+		ir_study_timer =sys_timeout_add(NULL,system_ir_rece,20);
 }
 
 static void user_ir_learn_out(void)
@@ -414,6 +434,9 @@ void ir_timer2_inti(void)
 
 void user_ir_learn_timeout(void)
 {
+ close_All_ir_timer();
+ ir_learn_pending =0;
+ int_500ms_wait_study_ct =0;
  fir_learn_finish =0;
  fir_study =0;
  fir_led_long = 0;
@@ -469,7 +492,7 @@ void system_ir_rece(void)
   u8 i;
 
   ir_study_timer =0;
-  if(fkey_doing || fir_star || fir_study_star || fir_learn_finish || int_500ms_wait_study_ct || fir_send)
+  if(fkey_doing || fir_star || fir_study_star || fir_learn_finish || int_500ms_wait_study_ct || fir_send || ir_led_times)
   	{
   	 ir_study_timer =sys_timeout_add(NULL,system_ir_rece,20);
 	 return;
