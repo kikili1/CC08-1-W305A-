@@ -37,6 +37,7 @@ static u32 bt_pair_id = 0;
 
 static u8 battery_low_warn_pending;
 static u8 ir_learn_combo;
+static u8 fkey_pair_clear;
 
 #define VOICE_F10_RELEASE_MS       40
 #define VOICE_F10_RETRY_MS         10
@@ -253,6 +254,7 @@ static void clr_bool_key(void)
 {
 	flong_key =0;
 	fkey_pair =0;
+	fkey_pair_clear =0;
 	firk_learn =0;
 	ir_learn_combo =0;
 	firk_clrr =0;
@@ -525,6 +527,22 @@ void matrix_key_map_deal(u8 offset)
 		}
 		return;
 	}
+	if(fn_pair)
+	{
+		if(tab == K_ok && key_len == 2)
+		{
+			fkey_pair_clear = 1;
+			flong_key = 1;
+			fir_send = 0;
+			fir_study_send = 0;
+			pair_step = 0;
+			RF_STEP = 0;
+			/* Back is mapped first; suppress both keys during the combo. */
+			memset(&_key, 0, sizeof(KEY_STRUCT));
+			return;
+		}
+	}
+
 	if(ir_learn_combo)
 	{
 		flong_key =1;
@@ -870,7 +888,13 @@ void long_key_ir_set(void)
 			int_long_key_ct =0;
 			flong_key =0;
 
-			if(fkey_pair)
+			if(fkey_pair_clear)
+			{
+				fkey_pair_clear =0;
+				RF_STEP =9;
+				only_notify =1;
+			}
+			else if(fkey_pair)
 			{
 				fkey_pair =0;
 				RF_STEP = 3;
@@ -917,6 +941,7 @@ void long_key_ir_set(void)
 	}
 	else {
 		int_long_key_ct =0;
+		fkey_pair_clear =0;
 		if(fkey_pair)
 			fkey_pair =0;
 		else if(fsys_fccSingle)
@@ -1227,6 +1252,14 @@ void rf_send_hid_key(void)
 #if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
 			user_ir_learn_save();
 #endif
+		case 9://clear BLE pairing
+		{
+			extern void user_pair_clear(void);
+			battery_low_warn_pending =0;
+			user_pair_clear();
+			pair_clear_led_start();
+			break;
+		}
 			break;
 		case 7://ir_study_stop
 #if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE

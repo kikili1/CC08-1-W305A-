@@ -248,6 +248,24 @@ static void ble_reset_addr(u8 *new_addr)
 	ble_module_enable(1);
 }
 
+void user_pair_clear(void)
+{
+    extern void le_hogp_set_pair_allow(void);
+
+    /* Stop reconnect/advertising before deleting the saved bond. */
+    if (int_advOpen_timer) {
+        sys_timeout_del(int_advOpen_timer);
+        int_advOpen_timer = 0;
+    }
+    ble_module_enable(0);
+    kb_24g_mode_set(0);
+    ble_bonding_info = 0;
+    syscfg_write(CFG_USER_BLE_BONDING, &ble_bonding_info, 1);
+    le_hogp_set_pair_allow();
+    fbt_donglePair = 0;
+    bt_led_mode = BT_PAIR_LED_DISCON;
+}
+
 void user_key_deal(u8 user_key, u8 timeout)
 {
     int ret = 0;

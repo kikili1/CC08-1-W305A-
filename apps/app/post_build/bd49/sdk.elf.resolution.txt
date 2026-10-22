@@ -723,9 +723,12 @@ objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,hogp_wakeUpAdv_config_set,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,sys_timeout_add,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,get_cur_bt_idx,pl
+-r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,user_pair_clear,pl
+-r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,sys_timeout_del,l
+-r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,syscfg_write,l
+-r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,le_hogp_set_pair_allow,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,user_key_deal,pl
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,_log,l
--r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,syscfg_write,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,get_random_number,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,syscfg_read,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,ble_slave_init,pl
@@ -737,7 +740,6 @@ objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,printf_buf,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,btstack_init,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,bt_init_api,pl
--r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,sys_timeout_del,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,ble_key_adv_open,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,rf_set_24g_hackable_coded,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,memcpy,l
@@ -758,9 +760,9 @@ objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,ble_bonding_info,pl
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,bt_led_mode,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,cur_bt_idx,pl
+-r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,_system_bool_bit,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,log_tag_const_i_HID_KEY,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,app_hidkey,pl
--r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,_system_bool_bit,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,app_bin_crc,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,_gy_bool_bit,l
 -r=objs/apps/app/bsp/common/bt_common/hid/examples/keyboard/app_hid_comm.c.o,_key_bool_bit,l
@@ -3506,6 +3508,9 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,remote_respod_atv_event,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,system_ir_clrr_key,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,syscfg_write,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,user_ir_learn_save,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,user_pair_clear,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,pair_clear_led_start,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,user_ir_learn_timeout,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,memcpy,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,put_buf,l
@@ -3526,12 +3531,13 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,matrix_key_table,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,matrix_key_ir_table,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,_ir_struct,pl
--r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,bt_led_mode,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,_ir_bool_bit,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,ir_learn_pending,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,IR_KEY_NUM,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,bt_led_mode,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,_gy_bool_bit,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,dpi_data,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,ir_led_times,l
--r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,IR_KEY_NUM,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,ir_valid_key,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,_mouse_bool_bit,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,_mouse,pl
@@ -3568,10 +3574,11 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,sys_timeout_add,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,system_ir_rece,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,user_ir_learn_timeout,pl
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,user_ir_learn_save,pl
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,sys_timer_modify,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,ir_timer2_inti,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,unrequest_irq,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,gpio_disable_function,l
--r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,sys_timer_modify,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,ir_set_continue,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,ir_compare_data,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,gptimer_get_resolution,l
@@ -3594,6 +3601,7 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,_struct_ir_xdata,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,IR_STEP,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,dat_Period,pl
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,ir_learn_pending,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,ir_led_times,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,_key_bool_bit,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,max_time,pl
@@ -3677,6 +3685,7 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,power_warn_led_handle,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,battery_low_led_start,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,battery_critical_led_start,pl
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,pair_clear_led_start,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,app_power_led_handler,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,Connect_led_set,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,gpio_hw_direction_output,l

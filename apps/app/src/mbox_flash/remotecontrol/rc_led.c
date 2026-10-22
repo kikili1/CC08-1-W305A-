@@ -357,7 +357,7 @@ void sys_power_led_pmu(void)
 		if(!int_pair_bias_timer)
 			int_pair_bias_timer =sys_timer_add(NULL,sys_bias_led_handle,80);
 	}
-	if(fir_led || fhogp_open || discon_key_led_phase)
+	if(fir_led || fhogp_open || discon_key_led_phase || flow_pow)
 		is_rcled_active =30;
 
 	if(fir_star)
@@ -439,6 +439,12 @@ void battery_critical_led_start(void)
 	/* Start on immediately, then toggle every 500 ms for exactly 3 seconds. */
 	battery_led_start(6,500);
 }
+void pair_clear_led_start(void)
+{
+	/* Start on, then nine toggles: five 100 ms flashes ending off. */
+	battery_led_start(9,100);
+}
+
 int app_power_led_handler(void)
 {
 	//log_info("----%s", __FUNCTION__);
