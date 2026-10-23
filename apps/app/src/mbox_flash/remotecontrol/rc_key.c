@@ -520,7 +520,9 @@ void matrix_key_map_deal(u8 offset)
 	{
 		fir_send =0;
 		fir_study_send =0;
-		if(key_len == 1 && ir_learn_pending && (tab == K_S1 || tab == K_S2))
+		if(key_len == 1 && tab == K_1)
+			RF_STEP =7;
+		else if(key_len == 1 && ir_learn_pending && (tab == K_S1 || tab == K_S2))
 		{
 			IR_KEY_NUM = (tab == K_S1) ? 1 : 2;
 			RF_STEP =8;
@@ -1252,6 +1254,7 @@ void rf_send_hid_key(void)
 #if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
 			user_ir_learn_save();
 #endif
+			break;
 		case 9://clear BLE pairing
 		{
 			extern void user_pair_clear(void);

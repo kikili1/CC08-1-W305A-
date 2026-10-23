@@ -41,6 +41,7 @@ _bool_int  _ir_bool_bit;
 u8  ir_led_times;
 u8	IR_KEY_NUM;
 u8 ir_learn_pending;
+static u8 ir_learn_saved_keys; /* Keys saved in the current learning session. */
 u16 IR_STEP;
 u32 max_time;
 u32 dat_Period;
@@ -342,6 +343,12 @@ void user_ir_learn_save(void)
 	if(syscfg_write(CFG_IR_KEY_NUM_BEGIN+IR_KEY_NUM,IR_STUDY_ARRAY,len) != len)
 		return;
 	ir_valid_key |=1<<IR_KEY_NUM;
+	ir_learn_saved_keys |=1<<IR_KEY_NUM;
+	if(ir_learn_saved_keys == ((1<<1) | (1<<2)))
+	{
+		user_ir_learn_timeout();
+		return;
+	}
 	ir_learn_pending =0;
 	fir_learn_finish =0;
 	fir_led_ir =0;
@@ -436,6 +443,7 @@ void user_ir_learn_timeout(void)
 {
  close_All_ir_timer();
  ir_learn_pending =0;
+ ir_learn_saved_keys =0;
  int_500ms_wait_study_ct =0;
  fir_learn_finish =0;
  fir_study =0;
