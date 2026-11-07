@@ -3491,7 +3491,6 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_key_matrix_sleep,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,memset,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,memcmp,l
--r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,user_ir_learn_key_activity,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,app_power_get_vbat_now,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,battery_critical_led_start,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,post_msg,l
@@ -3533,6 +3532,7 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,_key_bool_bit,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,_system_bool_bit,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,_ir_bool_bit,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,jiffies_2ms,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,_key,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,matrix_key_table,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,matrix_key_ir_table,pl
@@ -3570,13 +3570,11 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,gptimer_set_resolution,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,IR_STUDY_BUF_set,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,system_ir_only_send,pl
--r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,user_ir_learn_key_activity,pl
--r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,sys_timer_modify,l
--r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,sys_timeout_add,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,user_ir_learn_start,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,user_ir_learn_select,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,sys_timeout_del,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,user_ir_learn_process,pl
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,sys_timeout_add,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,ir_timer2_inti,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,user_ir_learn_timeout,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,unrequest_irq,l
@@ -3589,6 +3587,7 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,timer_ir_rx_isr,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,gpio_read,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,abs,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,sys_timer_modify,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,ir_idle_query,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,__local_irq_disable,
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,__local_irq_enable,
@@ -3608,7 +3607,6 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,max_time,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,ir_lp_target,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,retran_long,pl
--r=objs/apps/app/src/mbox_flash/remotecontrol/rc_ir.c.o,_key_bool_bit,l
 objs/apps/app/src/mbox_flash/remotecontrol/rc_gyro.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_gyro.c.o,system_gyro_initi_matrix,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_gyro.c.o,_log,l

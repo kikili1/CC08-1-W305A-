@@ -15,6 +15,7 @@
 #include "rc_cswitch.h"
 #include "app_power_mg.h"
 #include "cpu.h"
+#include "sys_timer.h"
 
 #define LOG_TAG_CONST       NORM
 #define LOG_TAG             "[RC_KEY]"
@@ -39,7 +40,9 @@ static u32 bt_pair_id = 0;
 static u8 battery_low_warn_pending;
 static u8 ir_learn_combo;
 static volatile u8 ir_learn_key_request;
+static volatile u32 ir_learn_last_key_activity;
 #define IR_LEARN_EXIT_REQUEST     0xff
+#define IR_LEARN_IDLE_MS          20000
 static u8 fkey_pair_clear;
 
 #define VOICE_F10_RELEASE_MS       40
@@ -426,7 +429,7 @@ void rc_key_scan(void)
 		key_check = 0;
 #if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
 		if(fir_study && memcmp(previous_keys, PRE_BUFF, sizeof(previous_keys)))
-			user_ir_learn_key_activity();
+			ir_learn_last_key_activity = SYS_TIMER_JIFFIES;
 #endif
 		memset(&_key, 0, sizeof(KEY_STRUCT));
 		clr_bool_key();
@@ -1049,6 +1052,18 @@ void long_key_ir_set(void)
 	}
 #endif
 
+	if(fir_study)
+	{
+		if(fkey_doing)
+			ir_learn_last_key_activity = SYS_TIMER_JIFFIES;
+		else if(!ir_learn_key_request &&
+		        SYS_TIMER_JIFFIES - ir_learn_last_key_activity >= sys_timer_msecs_to_jiffies(IR_LEARN_IDLE_MS))
+		{
+			ir_learn_key_request = IR_LEARN_EXIT_REQUEST;
+			only_notify = 1;
+		}
+	}
+
 	if(++int_ir_led_100ms_ct>=10)
 	{
 		int_ir_led_100ms_ct =0;
@@ -1229,6 +1244,7 @@ void rf_send_hid_key(void)
 			break;
 		case 4://ir_learn
 #if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
+			ir_learn_last_key_activity = SYS_TIMER_JIFFIES;
 			user_ir_learn_start();
 #endif
 			break;

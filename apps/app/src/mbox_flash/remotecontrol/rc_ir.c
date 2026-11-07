@@ -42,19 +42,18 @@ _bool_int  _ir_bool_bit;
 u8 ir_led_times;
 u8	IR_KEY_NUM;
 static u8 ir_learn_key;
+static u8 ir_learn_rx_bound;
 u16 IR_STEP;
 u32 max_time;
 u32 dat_Period;
 u16 retran_long;
 u16 ir_valid_key;
 u8 timer_isr_str;
-static u16 ir_learn_idle_timer;
 static u16 ir_learn_frame_timer;
 static u16 ir_learn_feedback_timer;
 static volatile u16 ir_learn_led_edges;
 static u16 ir_study_timer;
 
-#define IR_LEARN_IDLE_MS     20000
 #define IR_LEARN_FLASH_ON_MS   100
 #define IR_LEARN_FLASH_OFF_MS  200
 
@@ -284,30 +283,12 @@ static void ir_learn_stop_capture(void)
 	ir_learn_frame_timer = 0;
 }
 
-static void ir_learn_idle_timeout(void *priv)
-{
-	ir_learn_idle_timer = 0;
-	if(fkey_doing)
-		user_ir_learn_key_activity();
-	else
-		user_ir_learn_timeout();
-}
-
-void user_ir_learn_key_activity(void)
-{
-	if(ir_learn_idle_timer)
-		sys_timer_modify(ir_learn_idle_timer, IR_LEARN_IDLE_MS);
-	else
-		ir_learn_idle_timer = sys_timeout_add(NULL, ir_learn_idle_timeout, IR_LEARN_IDLE_MS);
-}
-
 void user_ir_learn_start(void)
 {
 	fir_study = 1;
 	fir_send = 0;
 	ir_led_times = 0;
 	fir_led_ir = 1;
-	user_ir_learn_key_activity();
 }
 
 static void ir_learn_led_step(void *priv)
@@ -445,21 +426,22 @@ void user_ir_learn_timeout(void)
 		return;
 
 	ir_learn_stop_capture();
-	if(ir_learn_idle_timer)
-		sys_timeout_del(ir_learn_idle_timer);
 	if(ir_study_timer)
 		sys_timeout_del(ir_study_timer);
 	ir_learn_led_edges = 0;
 	if(ir_learn_feedback_timer)
 		sys_timeout_del(ir_learn_feedback_timer);
-	ir_learn_idle_timer = 0;
 	ir_study_timer = 0;
 	ir_learn_feedback_timer = 0;
 	ir_learn_key = 0;
 	fir_learn_finish = 0;
 	fir_led_ir = 0;
-	unrequest_irq(IRQ_TIME1_IDX);
-	gpio_disable_function(IO_PORT_SPILT(IR_RX_PIN), PORT_FUNC_TIMER1_CAPTURE);
+	if(ir_learn_rx_bound)
+	{
+		unrequest_irq(IRQ_TIME1_IDX);
+		gpio_disable_function(IO_PORT_SPILT(IR_RX_PIN), PORT_FUNC_TIMER1_CAPTURE);
+		ir_learn_rx_bound = 0;
+	}
 	JL_TIMER1->CON = 0;
 	fir_study = 0;
 }
@@ -473,12 +455,17 @@ static void app_irflt_config(void)
 	low_num = 0;
 	timer_isr_str = 0;
 
-	gpio_set_mode(IO_PORT_SPILT(IR_RX_PIN), PORT_INPUT_PULLUP_10K);
-	gpio_set_function(IO_PORT_SPILT(IR_RX_PIN), PORT_FUNC_TIMER1_CAPTURE);
 	JL_TIMER1->CON = TIMER_PCLR;
 	JL_TIMER1->CNT = 0;
 	JL_TIMER1->PRD = 0;
-	request_irq(IRQ_TIME1_IDX, 7, timer_ir_rx_isr, 0);
+	/* The GPIO mux allocates a new input channel on every binding. */
+	if(!ir_learn_rx_bound)
+	{
+		gpio_set_mode(IO_PORT_SPILT(IR_RX_PIN), PORT_INPUT_PULLUP_10K);
+		gpio_set_function(IO_PORT_SPILT(IR_RX_PIN), PORT_FUNC_TIMER1_CAPTURE);
+		request_irq(IRQ_TIME1_IDX, 7, timer_ir_rx_isr, 0);
+		ir_learn_rx_bound = 1;
+	}
 	JL_TIMER1->CON = TIMER_CESL_IO | TIMER_SSEL_STD_24M | TIMER_PSET_64 | TIMER_MODE_FALL;
 }
 
