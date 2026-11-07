@@ -424,6 +424,10 @@ void rc_key_scan(void)
 	}
 	else {
 		key_check = 0;
+#if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
+		if(fir_study && memcmp(previous_keys, PRE_BUFF, sizeof(previous_keys)))
+			user_ir_learn_key_activity();
+#endif
 		memset(&_key, 0, sizeof(KEY_STRUCT));
 		clr_bool_key();
 		/* Rebuild the full held-key list from accepted column states.

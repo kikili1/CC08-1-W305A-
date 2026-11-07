@@ -287,10 +287,13 @@ static void ir_learn_stop_capture(void)
 static void ir_learn_idle_timeout(void *priv)
 {
 	ir_learn_idle_timer = 0;
-	user_ir_learn_timeout();
+	if(fkey_doing)
+		user_ir_learn_key_activity();
+	else
+		user_ir_learn_timeout();
 }
 
-static void ir_learn_refresh_timeout(void)
+void user_ir_learn_key_activity(void)
 {
 	if(ir_learn_idle_timer)
 		sys_timer_modify(ir_learn_idle_timer, IR_LEARN_IDLE_MS);
@@ -304,7 +307,7 @@ void user_ir_learn_start(void)
 	fir_send = 0;
 	ir_led_times = 0;
 	fir_led_ir = 1;
-	ir_learn_refresh_timeout();
+	user_ir_learn_key_activity();
 }
 
 static void ir_learn_led_step(void *priv)
@@ -337,7 +340,6 @@ void user_ir_learn_select(u8 key)
 	if(!fir_study || key < 1 || key >= TOTAL_IR_KEY)
 		return;
 
-	ir_learn_refresh_timeout();
 	ir_learn_stop_capture();
 	fir_learn_finish = 0;
 	if(ir_study_timer)
@@ -369,7 +371,6 @@ void user_ir_learn_process(u8 battery_critical)
 	if(!fir_study)
 		return;
 	ir_learn_key = 0;
-	ir_learn_refresh_timeout();
 	ir_learn_blink(2);
 }
 

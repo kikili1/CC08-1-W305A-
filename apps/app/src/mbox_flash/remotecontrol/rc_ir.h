@@ -42,6 +42,7 @@ void system_ir_clrr_key(void);
 void system_ir_check(void);
 void system_ir_tran(void);
 void user_ir_learn_start(void);
+void user_ir_learn_key_activity(void);
 void user_ir_learn_select(u8 key);
 void user_ir_learn_process(u8 battery_critical);
 void user_ir_learn_timeout(void);
