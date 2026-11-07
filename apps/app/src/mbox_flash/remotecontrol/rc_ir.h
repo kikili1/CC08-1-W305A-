@@ -32,21 +32,19 @@ typedef union
 	u8 xdata_ir_buf[128];
 }union_xdata_ir;
 
-extern u8	ir_led_times;
+extern u8 ir_led_times;
 extern u8	IR_KEY_NUM;
-extern u8 ir_learn_pending;
 extern	u16 ir_valid_key;
-extern u16  ir_study_timer;
-extern u8 int_500ms_wait_study_ct;
 
 void system_ir_initial(void);
 void system_ir_vm_initial(void);
 void system_ir_clrr_key(void);
 void system_ir_check(void);
 void system_ir_tran(void);
-void system_ir_rece(void);
+void user_ir_learn_start(void);
+void user_ir_learn_select(u8 key);
+void user_ir_learn_process(u8 battery_critical);
 void user_ir_learn_timeout(void);
-void user_ir_learn_save(void);
 
 
 u8 ir_set_continue(void);

@@ -24,6 +24,7 @@
 #include "gptimer.h"
 #include "sys_timer.h"
 #include "hw_timer.h"
+#include "cpu.h"
 
 #include "app_reg_include.h"
 
@@ -38,24 +39,24 @@ static volatile u8 is_ir_active = 0;
 
 _bool_int  _ir_bool_bit;
 
-u8  ir_led_times;
+u8 ir_led_times;
 u8	IR_KEY_NUM;
-u8 ir_learn_pending;
-static u8 ir_learn_saved_keys; /* Keys saved in the current learning session. */
+static u8 ir_learn_key;
 u16 IR_STEP;
 u32 max_time;
 u32 dat_Period;
 u16 retran_long;
 u16 ir_valid_key;
 u8 timer_isr_str;
-u8 int_500ms_wait_study_ct =0;
+static u16 ir_learn_idle_timer;
+static u16 ir_learn_frame_timer;
+static u16 ir_learn_feedback_timer;
+static volatile u16 ir_learn_led_edges;
+static u16 ir_study_timer;
 
-static u16   user_ir_learn_timer_hdl = 0;
-static u16   user_ir_learn_finish_hdl = 0;
-static u16   user_ir_learn_succ_hdl = 0;
-
-u16 ir_study_timer = 0,ir_learn_finish_timer = 0;
-
+#define IR_LEARN_IDLE_MS     20000
+#define IR_LEARN_FLASH_ON_MS   100
+#define IR_LEARN_FLASH_OFF_MS  200
 
 static u8  high_num,low_num,max_num,max_l_ct;
 static u8  IR_STUDY_CON[3],comp_buf[3];
@@ -229,7 +230,7 @@ u8 system_ir_only_send(u8 add1,u8 add2,u8 IR_DAT)
 {
  if(IR_DAT==0xfe)
 	return 0xfe;
- if(fir_study || fir_star || ir_study_timer)//????????????????????????????????????????????????
+ if(fir_study || fir_star)//????????????????????????????????????????????????
 	{
 		return 0xfe;
 	}
@@ -271,110 +272,120 @@ log_info("system_ir_only_send\n");
 }
 
 
-void close_All_ir_timer(void)
+static void system_ir_rece(void *priv);
+
+static void ir_learn_stop_capture(void)
 {
-	fir_study_star =0;
- 	JL_TIMER1->CON &= ~(0b11 << 0);
-	//unrequest_irq(IRQ_TIME5_IDX);
-	if(ir_learn_finish_timer)
-		sys_timeout_del(ir_learn_finish_timer);
-	ir_learn_finish_timer =0;
-
-	if(user_ir_learn_finish_hdl)
-		sys_timeout_del(user_ir_learn_finish_hdl);//200ms timer del
-	user_ir_learn_finish_hdl =0;
-
-	if(user_ir_learn_timer_hdl)
-		sys_timeout_del(user_ir_learn_timer_hdl);
-	user_ir_learn_timer_hdl =0;
+	fir_study_star = 0;
+	JL_TIMER1->CON &= ~(0b11 << 0);
+	JL_TIMER2->CON = 0;
+	if(ir_learn_frame_timer)
+		sys_timeout_del(ir_learn_frame_timer);
+	ir_learn_frame_timer = 0;
 }
 
-void user_ir_learn_succ(void)
+static void ir_learn_idle_timeout(void *priv)
 {
-	u8 i;
-	 
-	close_All_ir_timer();
-	if(fir_learn_fail)
+	ir_learn_idle_timer = 0;
+	user_ir_learn_timeout();
+}
+
+static void ir_learn_refresh_timeout(void)
+{
+	if(ir_learn_idle_timer)
+		sys_timer_modify(ir_learn_idle_timer, IR_LEARN_IDLE_MS);
+	else
+		ir_learn_idle_timer = sys_timeout_add(NULL, ir_learn_idle_timeout, IR_LEARN_IDLE_MS);
+}
+
+void user_ir_learn_start(void)
+{
+	fir_study = 1;
+	fir_send = 0;
+	ir_led_times = 0;
+	fir_led_ir = 1;
+	ir_learn_refresh_timeout();
+}
+
+static void ir_learn_led_step(void *priv)
+{
+	ir_learn_feedback_timer = 0;
+	if(!fir_study || !ir_learn_led_edges)
+		return;
+
+	fir_led_ir = !fir_led_ir;
+	if(--ir_learn_led_edges)
 	{
-	log_info("user_ir_learn_fail con_num=%d s_ct=%d\n",con_num,study_buf_ct);
-
-	// for(i=0;i<6;i++)
-	// 	log_info("h %d",IR_STUDY_H[i]);
-	// for(i=0;i<6;i++)
-	// 	log_info("l %d",IR_STUDY_L[i]);
-	// for(i=0;i<study_buf_ct+1;i++)
-	// 	log_info("buf[%d] %x",i,IR_STUDY_ARRAY[i+4+24+24]);
-	if(!ir_study_timer)
-		ir_study_timer =sys_timeout_add(NULL,system_ir_rece,1200);//learn fail wait 300ms ensure remote ir rel
-
-	}
-	else {
-		//дflash
-		//0x00	0xab  id
-		//4~27	IR_STUDY_HL
-		//28~~	IR_STUDY_BUF
-		//MCU��2K��������4*4 =16������
-		IR_STUDY_ARRAY[0]=0xab;
-		IR_con_long =comp_buf[0];//���볤��
-		// for(i=1;i<4;i++)
-		// 	log_info("arr %d",IR_STUDY_ARRAY[i]);
-		// for(i=0;i<6;i++)
-		// 	log_info("h %d",IR_STUDY_H[i]);
-		// for(i=0;i<6;i++)
-		// 	log_info("l %d",IR_STUDY_L[i]);
-		// for(i=0;i<study_buf_ct+1;i++)
-		// 	log_info("buf[%d] %x",i,IR_STUDY_ARRAY[i+4+24+24]);
-
-		/* Wait for a destination key before writing the decoded frame. */
-		ir_learn_pending =1;
-		fir_learn_finish =1;
-		fir_led_ir =1;
-		user_ir_learn_timer_hdl = sys_timeout_add(NULL, user_ir_learn_timeout, 20000);
-
+		u16 delay_ms = fir_led_ir ? IR_LEARN_FLASH_ON_MS : IR_LEARN_FLASH_OFF_MS;
+		ir_learn_feedback_timer = sys_timeout_add(NULL, ir_learn_led_step, delay_ms);
 	}
 }
 
-/* MSG_MATRIX_KEY context: flash writes stay out of the scan interrupt. */
-void user_ir_learn_save(void)
+static void ir_learn_blink(u8 flashes)
 {
-	int len =4+24+24+study_buf_ct+1;
-	if(!fir_study || !ir_learn_pending || IR_KEY_NUM < 1 || IR_KEY_NUM > 2)
+	/* Finish the current indication if a result arrives during the selection flash. */
+	local_irq_disable();
+	ir_learn_led_edges += 2 * flashes;
+	u8 start = !ir_learn_feedback_timer;
+	local_irq_enable();
+	if(start)
+		ir_learn_led_step(NULL);
+}
+
+void user_ir_learn_select(u8 key)
+{
+	if(!fir_study || key < 1 || key >= TOTAL_IR_KEY)
 		return;
-	if(syscfg_write(CFG_IR_KEY_NUM_BEGIN+IR_KEY_NUM,IR_STUDY_ARRAY,len) != len)
+
+	ir_learn_refresh_timeout();
+	ir_learn_stop_capture();
+	fir_learn_finish = 0;
+	if(ir_study_timer)
+		sys_timeout_del(ir_study_timer);
+	ir_learn_key = key;
+	ir_learn_blink(1);
+	system_ir_rece(NULL);
+}
+
+/* Called by MSG_MATRIX_KEY so flash writes stay outside the timer ISR. */
+void user_ir_learn_process(u8 battery_critical)
+{
+	if(!fir_study || !fir_learn_finish || !ir_learn_key)
 		return;
-	ir_valid_key |=1<<IR_KEY_NUM;
-	ir_learn_saved_keys |=1<<IR_KEY_NUM;
-	if(ir_learn_saved_keys == ((1<<1) | (1<<2)))
+
+	fir_learn_finish = 0;
+	u8 key = ir_learn_key;
+	int len = 4 + 24 + 24 + study_buf_ct + 1;
+	IR_STUDY_ARRAY[0] = 0xab;
+	IR_con_long = comp_buf[0];
+	if(fir_learn_fail || battery_critical || syscfg_write(CFG_IR_KEY_NUM_BEGIN + key, IR_STUDY_ARRAY, len) != len)
 	{
-		user_ir_learn_timeout();
+		if(fir_study)
+			ir_study_timer = sys_timeout_add(NULL, system_ir_rece, 1200);
 		return;
 	}
-	ir_learn_pending =0;
-	fir_learn_finish =0;
-	fir_led_ir =0;
-	ir_led_times =10;
-	if(user_ir_learn_timer_hdl)
-		sys_timer_modify(user_ir_learn_timer_hdl,20000);
-	if(!ir_study_timer)
-		ir_study_timer =sys_timeout_add(NULL,system_ir_rece,20);
+
+	ir_valid_key |= BIT(key);
+	if(!fir_study)
+		return;
+	ir_learn_key = 0;
+	ir_learn_refresh_timeout();
+	ir_learn_blink(2);
 }
 
 static void user_ir_learn_out(void)
 {
-	u8 i;
-	
-	close_All_ir_timer();
-	
-	if(ir_learn_finish_timer)//中断内不能改写flash和长时间打印
-		sys_timer_modify(ir_learn_finish_timer,10);
-	else ir_learn_finish_timer=sys_timeout_add(NULL,user_ir_learn_succ,10);
+	ir_learn_stop_capture();
+	fir_learn_finish = 1;
+	post_msg(1, MSG_MATRIX_KEY);
 }
-static void user_ir_learn_finish(void)
+
+static void user_ir_learn_finish(void *priv)
 {
 	u8 i;
-
-	log_info("user_ir_learn_finish con %d\n",con_num);
-	close_All_ir_timer();
+	ir_learn_frame_timer = 0;
+	ir_learn_stop_capture();
+	fir_learn_fail = 1;
 
 	if(con_num==2)
 	   {
@@ -385,11 +396,11 @@ static void user_ir_learn_finish(void)
 		  	{
 			  if(comp_buf[0] )
 			  {
-				fir_learn_finish =1;
+				fir_learn_fail = 0;
 			  }
 		  	}
 	   }
-	else if(con_num==1){
+	else if(con_num==1 && IR_STUDY_CON[0] >= 33){
 	  IR_STUDY_BUF[study_buf_ct] |=0xf;//��ʱ
 	  if((abs(IR_STUDY_H[0]/prd_1us-9000)<1000)&&(abs(IR_STUDY_L[0]/prd_1us-4500)<500))//9ms
 		 {
@@ -412,22 +423,10 @@ static void user_ir_learn_finish(void)
 		  IR_STUDY_L[3]=(108000 -dat_Period)*prd_1us; 
 		  log_info("ir_con==%d\n",study_buf_ct);
 		  
-		  fir_learn_finish =1;
+		  fir_learn_fail = 0;
 		 }
 	 }
-	fir_study_star =0;
-
-	if(!fir_learn_finish)
-		{
-		 if(!ir_study_timer)
-		 	ir_study_timer =sys_timeout_add(NULL,system_ir_rece,1200);
-		}
-	else {
-		fir_learn_fail =0;//succ
-		if(ir_learn_finish_timer)
-			sys_timer_modify(ir_learn_finish_timer,10);
-		else ir_learn_finish_timer=sys_timeout_add(NULL,user_ir_learn_succ,10);
-	}
+	user_ir_learn_out();
 }
 
 void ir_timer2_inti(void)
@@ -441,48 +440,45 @@ void ir_timer2_inti(void)
 
 void user_ir_learn_timeout(void)
 {
- close_All_ir_timer();
- ir_learn_pending =0;
- ir_learn_saved_keys =0;
- int_500ms_wait_study_ct =0;
- fir_learn_finish =0;
- fir_study =0;
- fir_led_long = 0;
- fir_study_star =0;// key into need clr
- is_ir_active =0;
- if(user_ir_learn_timer_hdl)
- 	sys_timeout_del(user_ir_learn_timer_hdl);
- user_ir_learn_timer_hdl =0;
- if(ir_study_timer)
- 	sys_timeout_del(ir_study_timer);
- ir_study_timer =0;
- unrequest_irq(IRQ_TIME1_IDX);
- gpio_disable_function(IO_PORT_SPILT(IR_RX_PIN), PORT_FUNC_TIMER1_CAPTURE);
- ir_led_times =10;
- JL_TIMER2->CON =0;
- JL_TIMER1->CON =0;
- log_info("user_ir_learn_timeout\n");
+	if(!fir_study)
+		return;
+
+	ir_learn_stop_capture();
+	if(ir_learn_idle_timer)
+		sys_timeout_del(ir_learn_idle_timer);
+	if(ir_study_timer)
+		sys_timeout_del(ir_study_timer);
+	ir_learn_led_edges = 0;
+	if(ir_learn_feedback_timer)
+		sys_timeout_del(ir_learn_feedback_timer);
+	ir_learn_idle_timer = 0;
+	ir_study_timer = 0;
+	ir_learn_feedback_timer = 0;
+	ir_learn_key = 0;
+	fir_learn_finish = 0;
+	fir_led_ir = 0;
+	unrequest_irq(IRQ_TIME1_IDX);
+	gpio_disable_function(IO_PORT_SPILT(IR_RX_PIN), PORT_FUNC_TIMER1_CAPTURE);
+	JL_TIMER1->CON = 0;
+	fir_study = 0;
 }
-static int ir_timer_id;
+
 static void app_irflt_config(void)
 {
-    gpio_set_mode(IO_PORT_SPILT(IR_RX_PIN), PORT_INPUT_PULLUP_10K);
-
-    gpio_set_function(IO_PORT_SPILT(IR_RX_PIN), PORT_FUNC_TIMER1_CAPTURE);
-    JL_TIMER1->CON = TIMER_PCLR;  //清PND,清寄存器
-    JL_TIMER1->CNT = 0; //清除计数值
-    JL_TIMER1->PRD = 0; //清除计数值
-    JL_TIMER1->CON = (TIMER_CESL_IO | TIMER_SSEL_STD_24M | TIMER_PSET_64);//I/O口输入，24M时钟源，4分频
-    JL_TIMER1->CON |= TIMER_MODE_FALL;  //上升沿捕获模式启动
 	void timer_ir_rx_isr(void);
-    request_irq(IRQ_TIME1_IDX, 7, timer_ir_rx_isr, 0);
 
-	fir_learn_parity =0;
-	//ir_timer2_inti();
+	fir_learn_parity = 0;
+	high_num = 0;
+	low_num = 0;
+	timer_isr_str = 0;
 
-	high_num =0;
-	low_num =0;
-	timer_isr_str =0;
+	gpio_set_mode(IO_PORT_SPILT(IR_RX_PIN), PORT_INPUT_PULLUP_10K);
+	gpio_set_function(IO_PORT_SPILT(IR_RX_PIN), PORT_FUNC_TIMER1_CAPTURE);
+	JL_TIMER1->CON = TIMER_PCLR;
+	JL_TIMER1->CNT = 0;
+	JL_TIMER1->PRD = 0;
+	request_irq(IRQ_TIME1_IDX, 7, timer_ir_rx_isr, 0);
+	JL_TIMER1->CON = TIMER_CESL_IO | TIMER_SSEL_STD_24M | TIMER_PSET_64 | TIMER_MODE_FALL;
 }
 
 
@@ -495,38 +491,28 @@ static void app_irflt_config(void)
 //Author: Owen
 //Date	: 2018/06/30
 //-------------------------------------------------------
-void system_ir_rece(void)
+static void system_ir_rece(void *priv)
 {
-  u8 i;
-
-  ir_study_timer =0;
-  if(fkey_doing || fir_star || fir_study_star || fir_learn_finish || int_500ms_wait_study_ct || fir_send || ir_led_times)
-  	{
-  	 ir_study_timer =sys_timeout_add(NULL,system_ir_rece,20);
-	 return;
-  	}
-  if(fir_study)
-  	{
-  	  if(!fir_study_star)
-  	  	{
-		 log_info("system_ir_rece\n");
-		 fir_study_star=1;
-		 is_ir_active =1;
-		 max_time =0;
-	 	 study_buf_ct =0;
-		 con_num =0;
-		 IR_STUDY_CON[0] =0;
-		 for(i=0;i<HL_LONG;i++)
-		 	 {
-		 	  IR_STUDY_H[i]=0;
-			  IR_STUDY_L[i]=0;
-		 	 }
-		 if(user_ir_learn_timer_hdl)
-			sys_timer_modify(user_ir_learn_timer_hdl,20000);
-		 else user_ir_learn_timer_hdl = sys_timeout_add(NULL, user_ir_learn_timeout, 20000);
-		 app_irflt_config();
-  	  	}
+	ir_study_timer = 0;
+	if(!fir_study || !ir_learn_key)
+		return;
+	if(fir_star)
+	{
+		ir_study_timer = sys_timeout_add(NULL, system_ir_rece, 20);
+		return;
 	}
+
+	max_time = 0;
+	study_buf_ct = 0;
+	con_num = 0;
+	IR_STUDY_CON[0] = 0;
+	for(u8 i = 0; i < HL_LONG; i++)
+	{
+		IR_STUDY_H[i] = 0;
+		IR_STUDY_L[i] = 0;
+	}
+	fir_study_star = 1;
+	app_irflt_config();
 }
 
 u8 ir_set_continue(void)
@@ -675,6 +661,8 @@ void timer_ir_rx_isr(void)
  u32 time,t2_ct;
 
  JL_TIMER1->CON |= TIMER_PCLR;   //清PND
+ if(!fir_study_star)
+	return;
  
  if(!fir_learn_parity)
  	{
@@ -775,18 +763,13 @@ void timer_ir_rx_isr(void)
 	  }
 	 if(max_time>6000*prd_1us)//6ms
 	  {
-	   for(i=max_num;i<study_buf_ct;i++)
+	   for(i=max_num;i<study_buf_ct && con_num<3;i++)
 		  {
 		   if((IR_STUDY_BUF[i]&0x0f)==max_l_ct)
 			  {
 			   IR_STUDY_CON[con_num] =i;
 			   max_num =i+1;
 			   con_num++;
-			   if(con_num>3)
-				  {
-				   con_num =3;
-				   break;
-				  }
 			  }
 		  }
 	  }
@@ -801,8 +784,6 @@ void timer_ir_rx_isr(void)
 			   return;
 			  }
 		   else {
-				JL_TIMER1->CON &= ~(0b11 << 0);
-				//unrequest_irq(IRQ_TIME5_IDX);
 				fir_learn_fail =0;//succ
 			    user_ir_learn_out();
 				return;
@@ -817,17 +798,21 @@ void timer_ir_rx_isr(void)
 	   	}
 	  }
 
-	 if(!user_ir_learn_finish_hdl)
-	   user_ir_learn_finish_hdl = sys_timeout_add(NULL, user_ir_learn_finish, 200);//200ms??��D2��D???��y������?���騦?���?���̡�?e��?
-	 else sys_timer_modify(user_ir_learn_finish_hdl,200);
+	 if(!ir_learn_frame_timer)
+	   ir_learn_frame_timer = sys_timeout_add(NULL, user_ir_learn_finish, 200);
+	 else sys_timer_modify(ir_learn_frame_timer, 200);
 
-	 study_buf_ct++;
+	 if(++study_buf_ct >= sizeof(IR_STUDY_BUF))
+	 {
+		 fir_learn_fail = 1;
+		 user_ir_learn_out();
+	 }
  	}
 }
 
 u8 ir_idle_query(void)
 {
-    return !is_ir_active;
+    return !(is_ir_active || fir_study);
 }
 REGISTER_LP_TARGET(ir_lp_target) = {
     .name = "rcir",

@@ -14,6 +14,7 @@
 #include "rc_gyro.h"
 #include "rc_cswitch.h"
 #include "app_power_mg.h"
+#include "cpu.h"
 
 #define LOG_TAG_CONST       NORM
 #define LOG_TAG             "[RC_KEY]"
@@ -37,6 +38,8 @@ static u32 bt_pair_id = 0;
 
 static u8 battery_low_warn_pending;
 static u8 ir_learn_combo;
+static volatile u8 ir_learn_key_request;
+#define IR_LEARN_EXIT_REQUEST     0xff
 static u8 fkey_pair_clear;
 
 #define VOICE_F10_RELEASE_MS       40
@@ -270,6 +273,7 @@ const u16 matrix_key_table[COW_MAX+COW_ADK][ROW_MAX];
 static unsigned char KEY_P;
 static u8  key_len =0;
 static u8  PRE_BUFF[COW_MAX+COW_ADK]={0};
+static void matrix_key_map_deal(u8 offset, u8 new_press);
 u8 key_scan_sub(u8 col,u8 cur_key_value,u8 *key_buf,u8 key_ct)
 {
 	u8 cur_key_change,cur_key_break,cur_key_new;
@@ -337,12 +341,15 @@ void rc_key_scan(void)
 {
     u8 row, col,m;
 	u8 tab_buf[10],tab_ct,matrix_event,block_key_send;
+	u8 previous_keys[sizeof(PRE_BUFF)];
 	u8 fn_ok_pressed =0,fn_one_pressed =0;
 	u8 power_pressed =0,three_pressed =0;
 	u16 key_value,key_voltage;
 
 	if(key_check)
 		key_check_again =1;
+	if(key_check_again)
+		memcpy(previous_keys, PRE_BUFF, sizeof(previous_keys));
 	matrix_event =0;
 	block_key_send =0;
 	tab_ct =0;
@@ -450,7 +457,7 @@ void rc_key_scan(void)
 		/* Physical power key is K_S1; S1/S2 remain learning targets. */
 		ir_learn_combo = (key_len == 2) && power_pressed && three_pressed;
 		key_voltage = tab_ct ? app_power_get_vbat_now() : 0;
-		if(tab_ct && key_voltage && (key_voltage < BATTERY_CRITICAL_MV))
+		if(!fir_study && tab_ct && key_voltage && (key_voltage < BATTERY_CRITICAL_MV))
 		{
 			battery_low_warn_pending = 0;
 			block_key_send = 1;
@@ -458,10 +465,13 @@ void rc_key_scan(void)
 		}
 		else
 		{
-			void matrix_key_map_deal(u8 );
 			for(m=0;m<tab_ct;m++)
-				matrix_key_map_deal(tab_buf[m]);
-			if(tab_ct && key_voltage && (key_voltage < BATTERY_LOW_WARN_MV))
+			{
+				u8 offset = tab_buf[m];
+				u8 new_press = !fir_study || !(previous_keys[offset >> 4] & BIT(offset & 0xf));
+				matrix_key_map_deal(offset, new_press);
+			}
+			if(!fir_study && tab_ct && key_voltage && (key_voltage < BATTERY_LOW_WARN_MV))
 				battery_low_warn_pending = 1;
 		}
 
@@ -503,7 +513,7 @@ const u8 matrix_key_ir_table[COW_MAX + COW_ADK][ROW_MAX]=
 {   0xFE,       0xFE,       0xFE,           0xFE,       0xFE,       0xFE }, //c5
 };
 
-void matrix_key_map_deal(u8 offset)
+static void matrix_key_map_deal(u8 offset, u8 new_press)
 {
 	u8 tab_h,tab_l;
 	u16 tab;
@@ -520,13 +530,11 @@ void matrix_key_map_deal(u8 offset)
 	{
 		fir_send =0;
 		fir_study_send =0;
-		if(key_len == 1 && tab == K_1)
-			RF_STEP =7;
-		else if(key_len == 1 && ir_learn_pending && (tab == K_S1 || tab == K_S2))
-		{
-			IR_KEY_NUM = (tab == K_S1) ? 1 : 2;
-			RF_STEP =8;
-		}
+		if(new_press && tab == K_back)
+			ir_learn_key_request = IR_LEARN_EXIT_REQUEST;
+		else if(new_press && ir_learn_key_request != IR_LEARN_EXIT_REQUEST &&
+		        key_len == 1 && (tab == K_S1 || tab == K_S2))
+			ir_learn_key_request = (tab == K_S1) ? 1 : 2;
 		return;
 	}
 	if(fn_pair)
@@ -549,6 +557,7 @@ void matrix_key_map_deal(u8 offset)
 	{
 		flong_key =1;
 		firk_learn =1;
+		fir_led_ir =0;
 		fir_send =0;
 		fir_study_send =0;
 		RF_STEP =0;
@@ -840,14 +849,6 @@ void MOUSE_CHECK(void)
 
 static u16 key_break_timer;
 
-static void sys_ir_study_sub(void)
-{
-	fir_study =1;
-	fir_send =0;
-	if(ir_study_timer)
-		sys_timer_modify(ir_study_timer,20);
-	else ir_study_timer =sys_timeout_add(NULL,system_ir_rece,20);
-}
 static void sys_key_break_timeout(void)
 {
 	int ret = 0;
@@ -870,7 +871,7 @@ static void sys_key_break_timeout(void)
 void long_key_ir_set(void)
 {
 	static u16  int_long_key_ct;
-	static u8  int_ir_led_fre_ct,int_ir_led_100ms_ct;
+	static u8 int_ir_led_100ms_ct;
 	u8 notify,only_notify = 0;
 	u8 array[1];
 	u16 i;
@@ -882,8 +883,10 @@ void long_key_ir_set(void)
 	{
 		i=260;
 #if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
-		if(firk_learn || firk_clrr)
-			i =500;
+		if(firk_learn)
+			i = 300; // 3 s at 10 ms per scan
+		else if(firk_clrr)
+			i = 500;
 #endif
 		if(++int_long_key_ct>=i)
 		{
@@ -924,8 +927,6 @@ void long_key_ir_set(void)
 				firk_learn =0;
 				RF_STEP = 4;
 				only_notify = 1;
-				// sys_ir_study_sub();
-				// int_500ms_wait_study_ct =6;
 		    }
 			else if(firk_clrr)
 			{
@@ -1048,42 +1049,17 @@ void long_key_ir_set(void)
 	{
 		int_ir_led_100ms_ct =0;
 		ftmode_up = 0;
-		if(firk_learn)
-			fir_led_ir =1;
-		if(fir_study)
-		{
-			if(ir_learn_pending)
-				fir_led_ir =1;
-			else if(fir_study_star)
-			{
-				if(++int_ir_led_fre_ct>=4)//慢闪频率控制
-				{
-					int_ir_led_fre_ct =0;
-					fir_led_ir =~fir_led_ir;
-				}
-			}
-			else {
-				fir_led_ir =~fir_led_ir;//长按学习键常亮到这里快闪
-
-				if(!fkey_doing)
-				{
-					if(int_500ms_wait_study_ct)//松开按键延时600ms 指示灯常亮
-					{
-						int_500ms_wait_study_ct--;
-						fir_led_ir =1;
-					}
-				}
-			}
-		}
-		if(ir_led_times)
+		if((fir_study && fir_learn_finish) || ir_learn_key_request)
+			only_notify = 1;
+		if(!fir_study && ir_led_times)
 		{
 			ir_led_times--;
-			fir_led_ir =~fir_led_ir;
+			fir_led_ir = !fir_led_ir;
 		}
    	}
 
 
-   	if(fir_study || ir_led_times  || firk_clrr || fir_send || firk_learn)
+	if(fir_study || ir_led_times || firk_clrr || fir_send || firk_learn)
 	 	fir_led=1;
    	else fir_led =0;
 
@@ -1176,6 +1152,21 @@ void rf_send_hid_key(void)
     u8 ir_send_deferred = 0;
 	static u8 muli_key[2]={0},sys_key=0;
 
+#if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
+	if(ir_learn_key_request)
+	{
+		local_irq_disable();
+		u8 request = ir_learn_key_request;
+		ir_learn_key_request = 0;
+		local_irq_enable();
+		if(request == IR_LEARN_EXIT_REQUEST)
+			user_ir_learn_timeout();
+		else
+			user_ir_learn_select(request);
+		return;
+	}
+#endif
+
 	/* RF_STEP分支会提前返回，先保证语音键的F10不被吞掉。 */
 	if(RF_STEP)
 		voice_f10_hid_process();
@@ -1234,8 +1225,7 @@ void rf_send_hid_key(void)
 			break;
 		case 4://ir_learn
 #if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
-			sys_ir_study_sub();
-			int_500ms_wait_study_ct =6;
+			user_ir_learn_start();
 #endif
 			break;
 		case 5://ir_clear
@@ -1250,11 +1240,6 @@ void rf_send_hid_key(void)
 			syscfg_write(CFG_USER_dpi_INDEX, array, 2);
 #endif
 			break;
-		case 8://save received IR to the selected key
-#if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
-			user_ir_learn_save();
-#endif
-			break;
 		case 9://clear BLE pairing
 		{
 			extern void user_pair_clear(void);
@@ -1263,11 +1248,6 @@ void rf_send_hid_key(void)
 			pair_clear_led_start();
 			break;
 		}
-			break;
-		case 7://ir_study_stop
-#if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
-			user_ir_learn_timeout();
-#endif
 			break;
 		default:
 			break;
@@ -1280,6 +1260,14 @@ void rf_send_hid_key(void)
 		return;
 	}
 
+#if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
+	if(fir_study && fir_learn_finish)
+	{
+		u16 voltage = app_power_get_vbat_now();
+		if(!ir_learn_key_request)
+			user_ir_learn_process(voltage && voltage < BATTERY_CRITICAL_MV);
+	}
+#endif
 	memcpy(array, (u8 *)&_key, 11);
 
 	array[0] |=MOUSE_KEY_TOUCH;
@@ -1350,6 +1338,9 @@ void rckey_tick_scan(void)
 			rc_key_scan();
 			MOUSE_CHECK();
 			long_key_ir_set();
+			/* The LED shares pins with the matrix. Restore it after each scan. */
+			if(fir_study && fir_led_ir)
+				Connect_led_set(1);
 		}
 	}
 }
