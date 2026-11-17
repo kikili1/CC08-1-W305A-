@@ -481,6 +481,7 @@ c_SRC_FILES := \
 	apps/app/src/mbox_flash/remotecontrol/rc_app.c \
 	apps/app/src/mbox_flash/remotecontrol/rc_key.c \
 	apps/app/src/mbox_flash/remotecontrol/rc_ir.c \
+	apps/app/src/mbox_flash/remotecontrol/rc_cc_ir_fastcopy.c \
 	apps/app/src/mbox_flash/remotecontrol/rc_gyro.c \
 	apps/app/src/mbox_flash/remotecontrol/rc_led.c \
 	apps/app/src/mbox_flash/remotecontrol/rc_cswitch.c \

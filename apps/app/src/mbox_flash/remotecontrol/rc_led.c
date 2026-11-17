@@ -8,6 +8,7 @@
 #include "gpio.h"
 #include "bt_ble.h"
 #include "rc_ir.h"
+#include "rc_cc_ir_fastcopy.h"
 #include "sys_timer.h"
 #include "power_api.h"
 #include "vble_complete.h"
@@ -136,7 +137,7 @@ void sys_read_vm_powerup(void)
 void sys_softoff_handle(void)
 {
 	int_sys_off_timer =0;
-	if(fir_study)
+	if(fir_study || rc_cc_ir_fastcopy_active())
 	{
 		int_sys_off_timer =sys_timeout_add(NULL,sys_softoff_handle,SYS_SOFTOFF_DISCON_TIME_BLE);
 		return;
@@ -250,7 +251,7 @@ void sys_power_led_pmu(void)
 	static bt_pair_led_enum old_status=0xff;
 	static u8 old_key_doing=0;
 
-	if(discon_key_led_phase && (bt_led_mode != BT_PAIR_LED_DISCON || fir_study || firk_learn))
+	if(discon_key_led_phase && (bt_led_mode != BT_PAIR_LED_DISCON || fir_study || firk_learn || rc_cc_ir_fastcopy_active()))
 	{
 		if(int_discon_key_led_timer)
 			sys_timeout_del(int_discon_key_led_timer);
@@ -260,7 +261,7 @@ void sys_power_led_pmu(void)
 	}
 
 	if(fkey_doing && !old_key_doing && bt_led_mode==BT_PAIR_LED_DISCON && !discon_key_led_phase
-	   && !fir_study && !firk_learn)
+	   && !fir_study && !firk_learn && !rc_cc_ir_fastcopy_active())
 	{
 		/* Ignore release/bounce until this complete two-flash sequence finishes. */
 		discon_key_led_phase =4;
@@ -580,7 +581,9 @@ void cover_led_high_low(void)
 	// }
 	// gpio_hw_direction_output(IO_PORT_SPILT(LED_MOT),1);
 
-	if(fir_study || firk_learn)
+	if(rc_cc_ir_fastcopy_active())
+        ret = Connect_led_set(rc_cc_ir_fastcopy_led_on());
+    else if(fir_study || firk_learn)
 		ret = Connect_led_set(fir_study && fir_led_ir);
 	else if(flow_pow)
 	{
@@ -603,7 +606,7 @@ void cover_led_high_low(void)
 			ret = Connect_led_set(1);
 		else ret = Connect_led_set(0);
 	}
-	if(!fir_study && !firk_learn && (fgyro_calib || fkey_pair || firk_clrr))
+	if(!rc_cc_ir_fastcopy_active() && !fir_study && !firk_learn && (fgyro_calib || fkey_pair || firk_clrr))
 		ret = Connect_led_set(1);
 #if TCFG_RGB_ENABLE
 	blt_led_set();

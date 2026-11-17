@@ -974,6 +974,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="apps/app/src/mbox_flash/remotecontrol/rc_ir.h" />
+        <Unit filename="apps/app/src/mbox_flash/remotecontrol/rc_cc_ir_fastcopy.c">
+            <Option compilerVar="CC" />
+        </Unit>
+        <Unit filename="apps/app/src/mbox_flash/remotecontrol/rc_cc_ir_fastcopy.h" />
 		<Unit filename="apps/app/src/mbox_flash/remotecontrol/rc_key.c">
 			<Option compilerVar="CC" />
 		</Unit>

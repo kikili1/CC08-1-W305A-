@@ -45,6 +45,7 @@
 #include "rc_key.h"
 #include "rc_led.h"
 #include "rc_ir.h"
+#include "rc_cc_ir_fastcopy.h"
 #include "app_reg_include.h"
 #include "rc_gyro.h"
 #include "app_power_mg.h"
@@ -156,7 +157,7 @@ void rf_rc_app()
 
     while (1) {
         sys_power_led_pmu();
-        if (!fmic_vld && !fir_star) {
+        if (!fmic_vld && !fir_star && !rc_cc_ir_fastcopy_active()) {
             /* putchar('s'); */
             /* u32 sr = dac_sr_read(); */
             audio_off();

@@ -8,6 +8,7 @@
 #include "vble_complete.h"
 #include "bt_ble.h"
 #include "rc_ir.h"
+#include "rc_cc_ir_fastcopy.h"
 #include "rc_led.h"
 #include "app_reg_include.h"
 #include "encoder_mge.h"
@@ -39,6 +40,8 @@ static u32 bt_pair_id = 0;
 
 static u8 battery_low_warn_pending;
 static u8 ir_learn_combo;
+static u8 ir_copy_combo;
+static u16 ir_copy_hold;
 static volatile u8 ir_learn_key_request;
 static volatile u32 ir_learn_last_key_activity;
 #define IR_LEARN_EXIT_REQUEST     0xff
@@ -347,6 +350,8 @@ void rc_key_scan(void)
 	u8 previous_keys[sizeof(PRE_BUFF)];
 	u8 fn_ok_pressed =0,fn_one_pressed =0;
 	u8 power_pressed =0,three_pressed =0;
+    u8 seven_pressed =0,nine_pressed =0;
+    u8 previous_copy_combo = ir_copy_combo;
 	u16 key_value,key_voltage;
 
 	if(key_check)
@@ -451,6 +456,8 @@ void rc_key_scan(void)
 			key_value =matrix_key_table[tab_buf[m]>>4][tab_buf[m]&0xf];
 			if(key_value == K_S1) power_pressed =1;
 			else if(key_value == K_3) three_pressed =1;
+            else if(key_value == K_7) seven_pressed =1;
+            else if(key_value == K_9) nine_pressed =1;
 			key_value &=~0x8000;
 			if(key_value == K_ok)
 				fn_ok_pressed =1;
@@ -463,10 +470,18 @@ void rc_key_scan(void)
 			fn_ok =1;
 		/* Physical power key is K_S1; S1/S2 remain learning targets. */
 		ir_learn_combo = (key_len == 2) && power_pressed && three_pressed;
-		key_voltage = tab_ct ? app_power_get_vbat_now() : 0;
-		if(!fir_study && tab_ct && key_voltage && (key_voltage < BATTERY_CRITICAL_MV))
+		ir_copy_combo = !fir_study && key_len == 2 && fn_ok_pressed ?
+            (seven_pressed ? IR_COPY_MASTER : nine_pressed ? IR_COPY_SLAVE : 0) : 0;
+        if(ir_copy_combo != previous_copy_combo)
+            ir_copy_hold = 0;
+        if(!key_len)
+            rc_cc_ir_fastcopy_keys_released();
+        key_voltage = tab_ct ? app_power_get_vbat_now() : 0;
+		if(!fir_study && !rc_cc_ir_fastcopy_blocks_keys() && tab_ct && key_voltage && (key_voltage < BATTERY_CRITICAL_MV))
 		{
 			battery_low_warn_pending = 0;
+            ir_copy_combo = 0;
+            ir_copy_hold = 0;
 			block_key_send = 1;
 			battery_critical_led_start();
 		}
@@ -475,10 +490,10 @@ void rc_key_scan(void)
 			for(m=0;m<tab_ct;m++)
 			{
 				u8 offset = tab_buf[m];
-				u8 new_press = !fir_study || !(previous_keys[offset >> 4] & BIT(offset & 0xf));
+				u8 new_press = !(previous_keys[offset >> 4] & BIT(offset & 0xf));
 				matrix_key_map_deal(offset, new_press);
 			}
-			if(!fir_study && tab_ct && key_voltage && (key_voltage < BATTERY_LOW_WARN_MV))
+			if(!fir_study && !rc_cc_ir_fastcopy_blocks_keys() && tab_ct && key_voltage && (key_voltage < BATTERY_LOW_WARN_MV))
 				battery_low_warn_pending = 1;
 		}
 
@@ -532,7 +547,22 @@ static void matrix_key_map_deal(u8 offset, u8 new_press)
 	tab =matrix_key_table[tab_h][tab_l];
 	IR_DATA =matrix_key_ir_table[tab_h][tab_l];
 #if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
-	/* Handle learning before normal IR/HID mapping. */
+	if(rc_cc_ir_fastcopy_blocks_keys() || ir_copy_combo)
+    {
+        fir_send = fir_study_send = 0;
+        RF_STEP = 0;
+        memset(&_key, 0, sizeof(_key));
+        if(new_press && rc_cc_ir_fastcopy_active()) {
+            u8 action = IR_COPY_KEY_OTHER;
+            if(key_len == 1 && tab == K_back)
+                action = IR_COPY_KEY_BACK;
+            else if(key_len == 1 && tab == K_ok)
+                action = IR_COPY_KEY_OK;
+            rc_cc_ir_fastcopy_key_request(action);
+        }
+        return;
+    }
+    /* Handle learning before normal IR/HID mapping. */
 	if(fir_study)
 	{
 		fir_send =0;
@@ -885,6 +915,9 @@ void long_key_ir_set(void)
 	int ret = 0;
 	extern struct bmts control_t;
 
+    if(ir_copy_combo && !rc_cc_ir_fastcopy_blocks_keys() && ir_copy_hold < 300 && ++ir_copy_hold == 300)
+        rc_cc_ir_fastcopy_enter_request(ir_copy_combo);
+    rc_cc_ir_fastcopy_tick();
 	notify =0;
 	if(flong_key)
 	{
@@ -1078,7 +1111,7 @@ void long_key_ir_set(void)
    	}
 
 
-	if(fir_study || ir_led_times || firk_clrr || fir_send || firk_learn)
+	if(fir_study || rc_cc_ir_fastcopy_blocks_keys() || ir_copy_combo || ir_led_times || firk_clrr || fir_send || firk_learn)
 	 	fir_led=1;
    	else fir_led =0;
 
@@ -1170,6 +1203,14 @@ void rf_send_hid_key(void)
     u8 array[11];
     u8 ir_send_deferred = 0;
 	static u8 muli_key[2]={0},sys_key=0;
+
+    u8 copy_was_active = rc_cc_ir_fastcopy_active();
+    rc_cc_ir_fastcopy_process();
+    if(copy_was_active || rc_cc_ir_fastcopy_blocks_keys()) {
+        memset(&_key, 0, sizeof(_key));
+        memset(&_mouse.X, 0, sizeof(_mouse) - 1);
+        return;
+    }
 
 #if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
 	if(ir_learn_key_request)
@@ -1356,11 +1397,14 @@ void rckey_tick_scan(void)
 		if(is_rckey_active)
 		{
 			rc_key_scan();
-			MOUSE_CHECK();
+			if(!rc_cc_ir_fastcopy_blocks_keys() && !ir_copy_combo)
+                MOUSE_CHECK();
 			long_key_ir_set();
 			/* The LED shares pins with the matrix. Restore it after each scan. */
-			if(fir_study && fir_led_ir)
-				Connect_led_set(1);
+			if(rc_cc_ir_fastcopy_active())
+                Connect_led_set(rc_cc_ir_fastcopy_led_on());
+            else if(fir_study && fir_led_ir)
+                Connect_led_set(1);
 		}
 	}
 }

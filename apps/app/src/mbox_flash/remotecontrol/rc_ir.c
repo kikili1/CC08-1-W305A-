@@ -27,6 +27,7 @@
 #include "cpu.h"
 
 #include "app_reg_include.h"
+#include "rc_cc_ir_fastcopy.h"
 
 
 #if(TCFG_IR_ENABLE)
@@ -642,6 +643,92 @@ void system_ir_tran(void)
 
 }
 
+static volatile u8 copy_tx_busy;
+static volatile u32 copy_tx_end;
+static const union_xdata_ir *copy_tx_record;
+static u8 copy_tx_index, copy_tx_limit, copy_tx_cycles, copy_tx_low;
+static int copy_tx_tid = -1;
+
+static void rc_cc_ir_fastcopy_tx_irq(int tid)
+{
+    const struct _IR_STUDY_STRUCT *r = &copy_tx_record->ir_buf;
+    u8 pulse = r->ir_study_buf[copy_tx_index];
+    u32 duration;
+    if(!copy_tx_low) {
+        gptimer_pwm_enable(pwm_tid);
+        duration = r->ir_study_h[pulse >> 4];
+        copy_tx_low = 1;
+    } else {
+        gptimer_pwm_disable(pwm_tid);
+        if(copy_tx_index + 1 == copy_tx_limit && copy_tx_cycles == 1) {
+            gptimer_pause(tid);
+            copy_tx_end = SYS_TIMER_JIFFIES;
+            copy_tx_busy = 0;
+            return;
+        }
+        duration = r->ir_study_l[pulse & 15];
+        copy_tx_low = 0;
+        if(++copy_tx_index == copy_tx_limit) {
+            copy_tx_cycles--;
+            copy_tx_index = r->ir_study_use[2];
+            copy_tx_limit = copy_tx_index + r->ir_study_use[3];
+        }
+    }
+    /* Match the existing playback driver's timer/ISR compensation. */
+    gptimer_set_resolution(tid, duration - 40);
+    gptimer_set_count(tid, 0);
+}
+
+void rc_cc_ir_fastcopy_hw_receive(u8 enable)
+{
+    ir_learn_stop_capture();
+    if(enable) {
+        app_irflt_config();
+        fir_study_star = 1;
+    } else if(ir_learn_rx_bound) {
+        unrequest_irq(IRQ_TIME1_IDX);
+        gpio_disable_function(IO_PORT_SPILT(IR_RX_PIN), PORT_FUNC_TIMER1_CAPTURE);
+        ir_learn_rx_bound = 0;
+    }
+}
+
+void rc_cc_ir_fastcopy_hw_stop(void)
+{
+    rc_cc_ir_fastcopy_hw_receive(0);
+    if(copy_tx_tid >= 0) {
+        gptimer_pause(copy_tx_tid);
+        gptimer_pwm_disable(pwm_tid);
+        gptimer_deinit(copy_tx_tid);
+        copy_tx_tid = -1;
+    }
+    copy_tx_busy = 0;
+}
+
+u8 rc_cc_ir_fastcopy_hw_sending(void) { return copy_tx_busy; }
+u32 rc_cc_ir_fastcopy_hw_sent_at(void) { return copy_tx_end; }
+
+u8 rc_cc_ir_fastcopy_hw_send(const u8 *record)
+{
+    static struct gptimer_config cfg;
+    if(copy_tx_busy || fir_star)
+        return 0;
+    rc_cc_ir_fastcopy_hw_stop();
+    cfg.resolution_us = 100;
+    cfg.irq_cb = rc_cc_ir_fastcopy_tx_irq;
+    cfg.tid = -1;
+    cfg.irq_priority = 7;
+    copy_tx_tid = gptimer_init(&cfg);
+    if(copy_tx_tid < 0)
+        return 0;
+    copy_tx_record = (const union_xdata_ir *)record;
+    copy_tx_index = copy_tx_low = 0;
+    copy_tx_cycles = 3;
+    copy_tx_limit = record[2] ? record[2] : record[3];
+    copy_tx_busy = 1;
+    gptimer_start(copy_tx_tid);
+    return 1;
+}
+
 ___interrupt
 void timer_ir_rx_isr(void)
 {
@@ -678,6 +765,11 @@ void timer_ir_rx_isr(void)
  	}
 
  
+ if(rc_cc_ir_fastcopy_active())
+ {
+     rc_cc_ir_fastcopy_rx_pulse(!fir_learn_parity, fir_learn_parity ? time : t2_ct);
+     return;
+ }
  if(!fir_learn_parity)
  	{
 	 for(i=0;i<HL_LONG;i++)
@@ -800,7 +892,7 @@ void timer_ir_rx_isr(void)
 
 u8 ir_idle_query(void)
 {
-    return !(is_ir_active || fir_study);
+    return !(is_ir_active || fir_study || rc_cc_ir_fastcopy_active());
 }
 REGISTER_LP_TARGET(ir_lp_target) = {
     .name = "rcir",
