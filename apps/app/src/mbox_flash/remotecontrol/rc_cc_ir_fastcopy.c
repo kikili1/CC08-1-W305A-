@@ -19,7 +19,8 @@
 enum { COPY_WAIT, COPY_TX_FIRST, COPY_TX_GAP, COPY_TX_SECOND };
 static volatile u8 copy_role, enter_request, key_request, key_guard, keys_released;
 static u8 copy_phase, rx_slot;
-static u32 copy_activity, copy_gap_start;
+static volatile u32 copy_activity;
+static u32 copy_gap_start;
 static union_xdata_ir copy_records[2];
 static u8 rx_pulses[COPY_RAW_MAX];
 static volatile u16 rx_count;
@@ -176,6 +177,7 @@ void rc_cc_ir_fastcopy_rx_pulse(u8 mark, u32 duration)
     } else if(!rx_active)
         return; /* The space before this segment's first mark belongs to the separator. */
     rx_activity = SYS_TIMER_JIFFIES;
+    copy_activity = rx_activity;
     if(rx_failed)
         return; /* Drain both segments of a failed round before accepting another round. */
     struct _IR_STUDY_STRUCT *r = &copy_records[rx_slot].ir_buf;
@@ -266,7 +268,7 @@ void rc_cc_ir_fastcopy_process(void)
         rc_cc_ir_fastcopy_exit();
         return;
     }
-    if(copy_role == IR_COPY_MASTER && keys)
+    if(keys)
         copy_activity = SYS_TIMER_JIFFIES;
     if(copy_role == IR_COPY_MASTER && (keys & IR_COPY_KEY_OK) &&
        !key_guard && copy_phase == COPY_WAIT)
@@ -294,7 +296,6 @@ void rc_cc_ir_fastcopy_process(void)
         return;
     }
     if(rx_active) {
-        copy_activity = rx_activity;
         if(rc_cc_ir_fastcopy_elapsed(rx_activity, COPY_QUIET_MS)) {
             rc_cc_ir_fastcopy_hw_receive(0);
             if(!rx_failed && !rc_cc_ir_fastcopy_rx_pack())

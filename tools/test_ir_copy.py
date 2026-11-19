@@ -72,6 +72,14 @@ u8 rc_cc_ir_fastcopy_hw_send(const u8 *record) {
     return 1;
 }
 """
+LED_MOCKS = r"""
+#define TCFG_RGB_ENABLE 0
+static u8 ir_copy_combo, led_output;
+static u16 ir_copy_hold;
+static u8 fir_study, firk_learn, flow_pow, fled_pow, discon_key_led_phase, discon_key_led_on;
+static u8 fir_led, fir_led_ir, fled_pair, fgyro_calib, fkey_pair, firk_clrr;
+static u8 Connect_led_set(u8 en) { led_output = en; return en; }
+"""
 FIXTURES = r"""
 static void make_record(union_xdata_ir *record, int kind, u32 code) {
     memset(record, 0, sizeof(*record));
@@ -117,6 +125,7 @@ static void advance(u32 ms) { ticks += ms / 2; clock_us = ticks * 2000; rc_cc_ir
 static void start(u8 role) {
     rc_cc_ir_fastcopy_enter_request(role); rc_cc_ir_fastcopy_process();
     assert(rc_cc_ir_fastcopy_active() == role && rc_cc_ir_fastcopy_led_on());
+    cover_led_high_low(); assert(led_output);
     rc_cc_ir_fastcopy_keys_released(); rc_cc_ir_fastcopy_process();
 }
 static void press(u8 key) {
@@ -128,6 +137,7 @@ static void reset(void) {
     memset(vm, 0, sizeof(vm)); memset(vm_len, 0, sizeof(vm_len));
     ticks = clock_us = tx_count = writes = fail_write = fail_read = fail_send = 0;
     voltage = 3000; ir_valid_key = 0;
+    ir_copy_combo = discon_key_led_phase = discon_key_led_on = 0;
 }
 static void store(int key, const union_xdata_ir *record) {
     vm[key] = *record; vm_len[key] = 53 + record->xdata_ir_buf[1];
@@ -257,7 +267,30 @@ int main(void) {
     reset(); ticks = UINT32_MAX - 100; start(IR_COPY_MASTER);
     advance(1800000); assert(!rc_cc_ir_fastcopy_active());
     reset(); start(IR_COPY_SLAVE); advance(7998); press(IR_COPY_KEY_OTHER);
+    advance(2); assert(rc_cc_ir_fastcopy_active());
+    advance(7996); assert(rc_cc_ir_fastcopy_active());
     advance(2); assert(!rc_cc_ir_fastcopy_active());
+
+    reset(); start(IR_COPY_SLAVE);
+    for(int key = IR_COPY_KEY_OTHER; key <= IR_COPY_KEY_OK; key++) {
+        advance(7000); press(key); assert(rc_cc_ir_fastcopy_active());
+    }
+    advance(7998); assert(rc_cc_ir_fastcopy_active() && !tx_count && !writes);
+    advance(2); assert(!rc_cc_ir_fastcopy_active());
+
+    /* A release while another key is held also restarts the child idle timer. */
+    reset(); start(IR_COPY_SLAVE); advance(7000);
+    matrix_activity(3, 1); rc_cc_ir_fastcopy_process();
+    advance(7998); assert(rc_cc_ir_fastcopy_active());
+    matrix_activity(1, 1); rc_cc_ir_fastcopy_process(); /* Unchanged scan is not activity. */
+    advance(2); assert(!rc_cc_ir_fastcopy_active());
+
+    /* Polling an older RX timestamp must not undo a more recent key event. */
+    reset(); start(IR_COPY_SLAVE); rc_cc_ir_fastcopy_rx_pulse(1, 560);
+    advance(60); press(IR_COPY_KEY_OTHER);
+    u32 key_time = ticks;
+    advance(60); assert(copy_activity == key_time);
+    rc_cc_ir_fastcopy_rx_pulse(0, 1000); assert(copy_activity == ticks);
 
     reset(); start(IR_COPY_SLAVE); feed(&source, 0, 0); advance(200);
     advance(8000); assert(rc_cc_ir_fastcopy_active() && rx_slot == 0 && !writes && rc_cc_ir_fastcopy_led_on());
@@ -268,6 +301,19 @@ int main(void) {
     }
     assert(rx_failed && rx_count == COPY_RAW_MAX && !writes && rc_cc_ir_fastcopy_led_on());
     for(int role = 1; role <= 2; role++) {
+        reset(); ir_copy_combo = role; ir_copy_hold = 0;
+        int threshold = role == IR_COPY_MASTER ? 300 : 250;
+        for(int scan = 0; scan < threshold - 1; scan++) entry_scan();
+        assert(!enter_request && !rc_cc_ir_fastcopy_active());
+        entry_scan(); assert(enter_request == role && ir_copy_hold == threshold);
+        rc_cc_ir_fastcopy_process(); assert(rc_cc_ir_fastcopy_active() == role);
+        reset(); ir_copy_combo = role; discon_key_led_phase = 4;
+        cover_led_high_low(); assert(!led_output); /* Held combo no longer overrides the normal LED. */
+        discon_key_led_phase = 0; start(role);
+        for(int step = 0; step < 4; step++) {
+            advance(100); cover_led_high_low(); assert(led_output); /* Enter ready mode without a flash. */
+        }
+        ir_copy_combo = 0;
         reset(); start(role); rc_cc_ir_fastcopy_key_request(IR_COPY_KEY_BACK); rc_cc_ir_fastcopy_process();
         assert(!rc_cc_ir_fastcopy_active() && rc_cc_ir_fastcopy_blocks_keys() && !receiving);
         rc_cc_ir_fastcopy_keys_released(); assert(!rc_cc_ir_fastcopy_blocks_keys());
@@ -338,8 +384,17 @@ def main():
     sender = driver.split("static volatile u8 copy_tx_busy;", 1)[1].split(
         "___interrupt\nvoid timer_ir_rx_isr", 1)[0]
     sender = "static volatile u8 copy_tx_busy;" + sender
+    key_source = (REMOTE / "rc_key.c").read_text(encoding="latin1")
+    threshold = re.search(r"u16 copy_hold_ticks =[^;]+;", key_source).group()
+    entry = re.search(r"if\(ir_copy_combo &&[^\n]+\)\s*rc_cc_ir_fastcopy_enter_request\(ir_copy_combo\);", key_source).group()
+    entry = "static void entry_scan(void) {" + threshold + entry + "}"
+    activity = re.search(r"if\(rc_cc_ir_fastcopy_active\(\) == IR_COPY_SLAVE &&\s*memcmp\(previous_keys, PRE_BUFF, sizeof\(previous_keys\)\)\)\s*rc_cc_ir_fastcopy_key_request\(IR_COPY_KEY_OTHER\);", key_source).group()
+    activity = "static void matrix_activity(u8 previous, u8 current) {u8 previous_keys[1] = {previous}, PRE_BUFF[1] = {current};" + activity + "}"
+    led_source = (REMOTE / "rc_led.c").read_text(encoding="latin1")
+    cover = led_source.split("void cover_led_high_low(void)", 1)[1].split("u8 rcled_idle_query", 1)[0]
+    cover = "void cover_led_high_low(void)" + cover
     cases = {
-        "core": PRELUDE + header + CORE_MOCKS + core + FIXTURES + CORE_TESTS,
+        "core": PRELUDE + header + CORE_MOCKS + core + LED_MOCKS + cover + entry + activity + FIXTURES + CORE_TESTS,
         "sender": PRELUDE + header + TX_MOCKS + sender + FIXTURES + TX_TESTS,
     }
     with tempfile.TemporaryDirectory(prefix="cc08_ir_copy_") as tmp:
@@ -349,6 +404,7 @@ def main():
             c.write_text(source, encoding="latin1")
             subprocess.run([args.cc, "-std=c99", "-O1", "-Wall", "-Wextra",
                             "-Wno-unused-function", "-Wno-unused-variable",
+                            "-Wno-unused-but-set-variable",
                             "-Werror", str(c), "-o", str(exe)], check=True)
             subprocess.run([str(exe)], check=True)
 

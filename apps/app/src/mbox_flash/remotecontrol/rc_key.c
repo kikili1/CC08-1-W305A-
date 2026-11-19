@@ -42,6 +42,7 @@ static u8 battery_low_warn_pending;
 static u8 ir_learn_combo;
 static u8 ir_copy_combo;
 static u16 ir_copy_hold;
+
 static volatile u8 ir_learn_key_request;
 static volatile u32 ir_learn_last_key_activity;
 #define IR_LEARN_EXIT_REQUEST     0xff
@@ -435,6 +436,9 @@ void rc_key_scan(void)
 #if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
 		if(fir_study && memcmp(previous_keys, PRE_BUFF, sizeof(previous_keys)))
 			ir_learn_last_key_activity = SYS_TIMER_JIFFIES;
+        if(rc_cc_ir_fastcopy_active() == IR_COPY_SLAVE &&
+           memcmp(previous_keys, PRE_BUFF, sizeof(previous_keys)))
+            rc_cc_ir_fastcopy_key_request(IR_COPY_KEY_OTHER);
 #endif
 		memset(&_key, 0, sizeof(KEY_STRUCT));
 		clr_bool_key();
@@ -915,7 +919,8 @@ void long_key_ir_set(void)
 	int ret = 0;
 	extern struct bmts control_t;
 
-    if(ir_copy_combo && !rc_cc_ir_fastcopy_blocks_keys() && ir_copy_hold < 300 && ++ir_copy_hold == 300)
+    u16 copy_hold_ticks = (ir_copy_combo == IR_COPY_MASTER) ? 300 : 250;
+    if(ir_copy_combo && !rc_cc_ir_fastcopy_blocks_keys() && ir_copy_hold < copy_hold_ticks && ++ir_copy_hold == copy_hold_ticks)
         rc_cc_ir_fastcopy_enter_request(ir_copy_combo);
     rc_cc_ir_fastcopy_tick();
 	notify =0;
