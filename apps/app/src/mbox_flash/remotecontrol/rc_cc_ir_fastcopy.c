@@ -14,7 +14,16 @@
 #define COPY_SLAVE_MS 8000
 #define COPY_KEY_GAP_MS 300
 #define COPY_QUIET_MS 200
+#define COPY_SECOND_WAIT_MS 400
 #define COPY_RAW_MAX (3 * 76)
+
+/* Four distinct marks cannot be a complete three-cycle playback of a learned key. */
+static const union_xdata_ir empty_slot = { .ir_buf = {
+    .ir_study_use = {0, 3, 4, 0},
+    .ir_study_h = {2400, 4800, 1200, 3600},
+    .ir_study_l = {3300, 1700, 2700},
+    .ir_study_buf = {0x00, 0x11, 0x22, 0x30},
+} };
 
 enum { COPY_WAIT, COPY_TX_FIRST, COPY_TX_GAP, COPY_TX_SECOND };
 static volatile u8 copy_role, enter_request, key_request, key_guard, keys_released;
@@ -142,9 +151,9 @@ static void rc_cc_ir_fastcopy_master_send(void)
     if(!mask)
         return;
     if(!(mask & 1))
-        copy_records[0] = copy_records[1];
+        copy_records[0] = empty_slot;
     if(!(mask & 2))
-        copy_records[1] = copy_records[0];
+        copy_records[1] = empty_slot;
     if(rc_cc_ir_fastcopy_hw_send(copy_records[0].xdata_ir_buf))
         copy_phase = COPY_TX_FIRST;
 }
@@ -192,10 +201,35 @@ void rc_cc_ir_fastcopy_rx_pulse(u8 mark, u32 duration)
         rx_pulses[rx_count - 1] = (rx_pulses[rx_count - 1] & 0xf0) | index;
 }
 
+static u8 rc_cc_ir_fastcopy_is_empty(void)
+{
+    const struct _IR_STUDY_STRUCT *marker = &empty_slot.ir_buf;
+    const struct _IR_STUDY_STRUCT *r = &copy_records[rx_slot].ir_buf;
+    if(rx_count != 4 || (rx_pulses[3] & 15) != 15)
+        return 0;
+    for(u8 i = 0; i < 4; i++) {
+        u8 high = rx_pulses[i] >> 4;
+        u8 low = rx_pulses[i] & 15;
+        u32 mark = marker->ir_study_h[i];
+        if(high >= HL_LONG || r->ir_study_h[high] + 180 < mark ||
+           r->ir_study_h[high] > mark + 180)
+            return 0;
+        if(i < 3) {
+            u32 space = marker->ir_study_l[i];
+            if(low >= HL_LONG || r->ir_study_l[low] + 180 < space ||
+               r->ir_study_l[low] > space + 180)
+                return 0;
+        }
+    }
+    return 1;
+}
+
 /* Keep the first-frame prefix and one repeat block in the normal 128-byte format. */
 static u8 rc_cc_ir_fastcopy_rx_pack(void)
 {
     struct _IR_STUDY_STRUCT *r = &copy_records[rx_slot].ir_buf;
+    if(rc_cc_ir_fastcopy_is_empty())
+        return 1; /* A recognized empty marker leaves the staged record invalid. */
     for(u16 repeat = 1; repeat <= rx_count / 2 && repeat <= sizeof(r->ir_study_buf); repeat++) {
         u16 prefix = rx_count - 2 * repeat;
         u8 gap = rx_pulses[rx_count - repeat - 1] & 15;
@@ -232,14 +266,27 @@ static u8 rc_cc_ir_fastcopy_slave_save(void)
     u16 voltage = app_power_get_vbat_now();
     if(voltage && voltage < 2100)
         return 0;
+    if(!copy_records[0].xdata_ir_buf[0] && !copy_records[1].xdata_ir_buf[0])
+        return 0;
     for(u8 slot = 0; slot < 2; slot++) {
+        if(!copy_records[slot].xdata_ir_buf[0])
+            continue;
         u16 len = 53 + copy_records[slot].xdata_ir_buf[1];
         if(!rc_cc_ir_fastcopy_record_valid(&copy_records[slot], len))
             return 0;
     }
     for(u8 slot = 0; slot < 2; slot++) {
+        if(!copy_records[slot].xdata_ir_buf[0])
+            continue;
         u16 len = 53 + copy_records[slot].xdata_ir_buf[1];
         if(syscfg_write(CFG_IR_KEY_NUM_BEGIN + slot + 1, &copy_records[slot], len) != len) {
+            system_ir_vm_initial();
+            return 0;
+        }
+    }
+    for(u8 slot = 0; slot < 2; slot++) {
+        if(!copy_records[slot].xdata_ir_buf[0] &&
+           syscfg_write(CFG_IR_KEY_NUM_BEGIN + slot + 1, &copy_records[slot], 1) != 1) {
             system_ir_vm_initial();
             return 0;
         }
@@ -310,12 +357,10 @@ void rc_cc_ir_fastcopy_process(void)
                 rc_cc_ir_fastcopy_hw_receive(1);
             }
         }
-    } else if(rc_cc_ir_fastcopy_elapsed(copy_activity, COPY_SLAVE_MS)) {
-        if(rx_slot)
-            rc_cc_ir_fastcopy_wait(); /* Missing second segment: discard the first and start a fresh 8 s wait. */
-        else
-            rc_cc_ir_fastcopy_exit();
-    }
+    } else if(rx_slot && rc_cc_ir_fastcopy_elapsed(rx_activity, COPY_SECOND_WAIT_MS))
+        rc_cc_ir_fastcopy_wait();
+    else if(rc_cc_ir_fastcopy_elapsed(copy_activity, COPY_SLAVE_MS))
+        rc_cc_ir_fastcopy_exit();
 }
 
 #endif

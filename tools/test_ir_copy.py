@@ -106,13 +106,14 @@ static void make_record(union_xdata_ir *record, int kind, u32 code) {
 static int sequence(const union_xdata_ir *record, u32 *out) {
     const struct _IR_STUDY_STRUCT *r = &record->ir_buf;
     int count = 0;
-    for(int cycle = 0; cycle < 3; cycle++) {
+    int cycles = r->ir_study_use[3] ? 3 : 1;
+    for(int cycle = 0; cycle < cycles; cycle++) {
         int start = cycle == 0 ? 0 : r->ir_study_use[2];
         int len = cycle == 0 && r->ir_study_use[2] ? r->ir_study_use[2] : r->ir_study_use[3];
         for(int i = start; i < start + len; i++) {
             u8 pulse = r->ir_study_buf[i];
             out[count++] = r->ir_study_h[pulse >> 4];
-            if(cycle != 2 || i + 1 != start + len)
+            if(cycle != cycles - 1 || i + 1 != start + len)
                 out[count++] = r->ir_study_l[pulse & 15];
         }
     }
@@ -174,12 +175,12 @@ static void roundtrip(int mask, int first_kind, int second_kind, int jitter) {
     start(IR_COPY_MASTER); press(IR_COPY_KEY_OK);
     assert(tx_count == 1 && sending && !receiving);
     sent[0] = wire[0];
-    same_playback(&sent[0], mask & 1 ? &first : &second);
+    same_playback(&sent[0], mask & 1 ? &first : &empty_slot);
     tx_done(); assert(copy_phase == COPY_TX_GAP);
     advance(298); assert(tx_count == 1);
     advance(2); assert(tx_count == 2 && copy_phase == COPY_TX_SECOND);
     sent[1] = wire[1];
-    same_playback(&sent[1], mask & 2 ? &second : &first);
+    same_playback(&sent[1], mask & 2 ? &second : &empty_slot);
     tx_done(); assert(copy_phase == COPY_WAIT && rc_cc_ir_fastcopy_led_on() && rc_cc_ir_fastcopy_active());
     reset(); store(1, &second); store(2, &first);
     start(IR_COPY_SLAVE);
@@ -191,9 +192,13 @@ static void roundtrip(int mask, int first_kind, int second_kind, int jitter) {
     assert(!writes);
     advance(200);
     assert(!rc_cc_ir_fastcopy_active() && !receiving && !rc_cc_ir_fastcopy_led_on() && writes == 2);
-    assert(ir_valid_key == 6);
-    same_playback(&sent[0], &vm[1]); same_playback(&sent[1], &vm[2]);
-    system_ir_vm_initial(); assert(ir_valid_key == 6);
+    for(int slot = 0; slot < 2; slot++) {
+        if(mask & BIT(slot))
+            same_playback(&sent[slot], &vm[slot + 1]);
+        else
+            assert(vm_len[slot + 1] == 1 && vm[slot + 1].xdata_ir_buf[0] == 0);
+    }
+    system_ir_vm_initial(); assert(ir_valid_key == (mask << 1));
 }
 static void failed_round(int bad_slot, int write_failure, int low_battery) {
     union_xdata_ir source, old[3];
@@ -214,6 +219,26 @@ int main(void) {
     for(int mask = 1; mask <= 3; mask++)
         for(int kind = 0; kind <= 2; kind++) roundtrip(mask, kind, (kind + 1) % 3, 0);
     roundtrip(3, 0, 1, -25); roundtrip(3, 1, 0, 25);
+    roundtrip(1, 0, 1, -80); roundtrip(2, 0, 1, 80);
+    for(int scenario = 0; scenario < 4; scenario++) {
+        union_xdata_ir learned;
+        make_record(&learned, 0, 0xa55aa55a);
+        reset(); store(1, &learned); store(2, &learned);
+        start(IR_COPY_SLAVE);
+        feed(&empty_slot, scenario == 0, 0); advance(200);
+        assert(!writes);
+        if(scenario == 1) {
+            advance(400);
+            assert(rx_slot == 0 && !writes);
+        } else {
+            advance(100);
+            fail_write = scenario == 3 ? 1 : 0;
+            feed(scenario == 2 ? &empty_slot : &learned, 0, 0);
+            advance(200);
+            assert(writes == (scenario == 3 ? 1 : 0));
+        }
+        assert(ir_valid_key == 6 && vm[1].xdata_ir_buf[0] == 0xab);
+    }
     for(int bad = 1; bad <= 2; bad++) failed_round(bad, 0, 0);
     failed_round(0, 1, 0); failed_round(0, 2, 0); failed_round(0, 0, 1);
 
@@ -293,7 +318,7 @@ int main(void) {
     rc_cc_ir_fastcopy_rx_pulse(0, 1000); assert(copy_activity == ticks);
 
     reset(); start(IR_COPY_SLAVE); feed(&source, 0, 0); advance(200);
-    advance(8000); assert(rc_cc_ir_fastcopy_active() && rx_slot == 0 && !writes && rc_cc_ir_fastcopy_led_on());
+    advance(400); assert(rc_cc_ir_fastcopy_active() && rx_slot == 0 && !writes && rc_cc_ir_fastcopy_led_on());
     advance(8000); assert(!rc_cc_ir_fastcopy_active());
     reset(); start(IR_COPY_SLAVE);
     for(int i = 0; i <= COPY_RAW_MAX; i++) {
@@ -318,7 +343,7 @@ int main(void) {
         assert(!rc_cc_ir_fastcopy_active() && rc_cc_ir_fastcopy_blocks_keys() && !receiving);
         rc_cc_ir_fastcopy_keys_released(); assert(!rc_cc_ir_fastcopy_blocks_keys());
     }
-    puts("PASS: waveform roundtrips, single-key duplication, 300 ms separation, staging, failures and timeouts");
+    puts("PASS: waveform roundtrips, empty slots, 300 ms separation, staging, failures and timeouts");
     return 0;
 }
 """
@@ -345,9 +370,12 @@ static void gptimer_set_count(int tid, int n) { (void)tid; (void)n; }
 """
 TX_TESTS = r"""
 int main(void) {
-    for(int kind = 0; kind < 3; kind++) {
+    for(int kind = 0; kind < 4; kind++) {
         union_xdata_ir source; u32 expected[456];
-        make_record(&source, kind, 0x12ab34cd);
+        if(kind == 3)
+            source = empty_slot;
+        else
+            make_record(&source, kind, 0x12ab34cd);
         int count = sequence(&source, expected), old_released = released;
         assert(rc_cc_ir_fastcopy_hw_send(source.xdata_ir_buf) && rc_cc_ir_fastcopy_hw_sending());
         for(int i = 0; i < count; i++) {
@@ -395,7 +423,9 @@ def main():
     cover = "void cover_led_high_low(void)" + cover
     cases = {
         "core": PRELUDE + header + CORE_MOCKS + core + LED_MOCKS + cover + entry + activity + FIXTURES + CORE_TESTS,
-        "sender": PRELUDE + header + TX_MOCKS + sender + FIXTURES + TX_TESTS,
+        "sender": PRELUDE + header + TX_MOCKS + sender + re.search(
+            r"static const union_xdata_ir empty_slot = .*?^\} \};", core, re.MULTILINE | re.DOTALL
+        ).group() + FIXTURES + TX_TESTS,
     }
     with tempfile.TemporaryDirectory(prefix="cc08_ir_copy_") as tmp:
         for name, source in cases.items():

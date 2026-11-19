@@ -722,7 +722,7 @@ u8 rc_cc_ir_fastcopy_hw_send(const u8 *record)
         return 0;
     copy_tx_record = (const union_xdata_ir *)record;
     copy_tx_index = copy_tx_low = 0;
-    copy_tx_cycles = 3;
+    copy_tx_cycles = record[3] ? 3 : 1;
     copy_tx_limit = record[2] ? record[2] : record[3];
     copy_tx_busy = 1;
     gptimer_start(copy_tx_tid);
