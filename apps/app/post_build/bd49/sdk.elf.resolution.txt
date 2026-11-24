@@ -803,6 +803,9 @@ objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,hogp_wakeUpAdv_config_set,pl
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,memset,l
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,ble_gatt_server_set_adv_config,l
+-r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,hogp_wakeup_reconnect,pl
+-r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,ble_gatt_server_get_work_state,l
+-r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,ble_module_enable,pl
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,ble_key_adv_open,pl
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,bt_ble_before_start_init,pl
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,ble_comm_init,l
@@ -812,7 +815,6 @@ objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,bt_ble_init,pl
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,bt_ble_exit,pl
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,sys_timer_del,l
--r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,ble_module_enable,pl
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,ble_comm_exit,l
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,ble_comm_module_enable,l
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,le_hogp_set_icon,pl
@@ -878,6 +880,7 @@ objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,ble_gatt_server_set_profile,l
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,ble_hid_timer_handle,pl
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,hogp_server_init_cfg,pl
+-r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,_gy_bool_bit,l
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,bt_led_mode,l
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,le_hogp_target,pl
 -r=objs/apps/app/bsp/common/bt_common/hid/modules/bt/ble_hogp.c.o,random_addr_info,pl
@@ -3461,6 +3464,7 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o,sys_power_down,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o,audio_init,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o,get_msg,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o,hogp_wakeup_reconnect,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o,rf_send_hid_key,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o,audio_msg_handle,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o,app_power_led_handler,l

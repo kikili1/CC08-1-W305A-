@@ -1387,6 +1387,22 @@ void hogp_wakeUpAdv_config_set(void)
 //     ble_gatt_server_set_adv_config(&hogp_server_adv_config);
 // }
 
+void hogp_wakeup_reconnect(void)
+{
+    if (!fsys_initok || !hogp_pair_info.pair_flag || hogp_con_handle ||
+        bt_led_mode != BT_PAIR_LED_DISCON) {
+        return;
+    }
+
+    ble_state_e state = ble_gatt_server_get_work_state();
+    if (state != BLE_ST_IDLE && state != BLE_ST_DISCONN && state != BLE_ST_INIT_OK) {
+        return;
+    }
+
+    hogp_adv_config_set();
+    ble_module_enable(1);
+}
+
 void ble_key_adv_open(void)
 {
 	hogp_adv_config_set();

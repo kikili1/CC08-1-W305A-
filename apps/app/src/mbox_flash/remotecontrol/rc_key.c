@@ -1284,7 +1284,7 @@ void rf_send_hid_key(void)
 		case 3://key_pair
 			ble_set_fix_pwr(7);
 			extern void user_key_deal(u8 , u8);
-			user_key_deal(0,1);
+			user_key_deal(0,0);
 			break;
 		case 4://ir_learn
 #if TCFG_IR_STUDY_ENABLE && TCFG_IR_ENABLE
@@ -1416,6 +1416,11 @@ void rckey_tick_scan(void)
 void rckey_active_set(P33_IO_WKUP_EDGE edge)
 {
 	rc_key_init();
+#if BLE_EN
+	/* Start BLE advertising from the remote-control loop. */
+	if(fsys_initok)
+		post_msg(1, MSG_RC_WAKEUP);
+#endif
 	log_info("wakeup\n");
 }
 

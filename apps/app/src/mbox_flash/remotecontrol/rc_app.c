@@ -87,6 +87,7 @@
 /* 外部变量/函数声明 */
 extern void bt_init_api(void);
 extern void ble_module_enable(u8 en);
+extern void hogp_wakeup_reconnect(void);
 // extern u32 rf_enc_output(void *priv, u8 *data, u16 len);
 
 // static int remote_audio_send_api(u8 *data, u16 len)
@@ -168,6 +169,11 @@ void rf_rc_app()
 
         err = get_msg(2, &msg[0]);
         switch (msg[0]) {
+#if BLE_EN
+        case MSG_RC_WAKEUP:
+            hogp_wakeup_reconnect();
+            break;
+#endif
         case MSG_MATRIX_KEY:
         case MSG_IO_MOUSE:
             /* send_ir_key(msg[0], 0); */
