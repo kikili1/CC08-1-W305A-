@@ -518,14 +518,23 @@ void rc_key_scan(void)
 } 
 
 //key TABLE
+// const u16 matrix_key_table[COW_MAX + COW_ADK][ROW_MAX]=
+// {
+// //  R0          R1          R2              R3          R4          R5
+// {   K_NULL,     K_NULL,     K_down,         K_NULL,     K_NULL,     K_up }, //c0
+// {   K_back,     K_9,        K_0,            K_7,        K_8,        K_voice }, //c1
+// {   K_right,    K_S2,       K_left,         K_S1,       K_NULL,     K_ok }, //c2
+// {   K_vol_up,   K_6,        K_vol_down,     K_4,        K_5,        K_home }, //c3
+// {   K_ch_up,    K_3,        K_ch_down,      K_1,        K_2,        K_mouse }, //c4
+// };
 const u16 matrix_key_table[COW_MAX + COW_ADK][ROW_MAX]=
 {
 //  R0          R1          R2              R3          R4          R5
 {   K_NULL,     K_NULL,     K_down,         K_NULL,     K_NULL,     K_up }, //c0
 {   K_back,     K_9,        K_0,            K_7,        K_8,        K_voice }, //c1
 {   K_right,    K_S2,       K_left,         K_S1,       K_NULL,     K_ok }, //c2
-{   K_vol_up,   K_6,        K_vol_down,     K_4,        K_5,        K_home }, //c3
-{   K_ch_up,    K_3,        K_ch_down,      K_1,        K_2,        K_mouse }, //c4
+{   K_ch_up,   K_6,        K_vol_up,     K_4,        K_5,        K_home }, //c3
+{   K_ch_down,    K_3,        K_vol_down,      K_1,        K_2,        K_mouse }, //c4
 };
 const u8 matrix_key_ir_table[COW_MAX + COW_ADK][ROW_MAX]=
 {
