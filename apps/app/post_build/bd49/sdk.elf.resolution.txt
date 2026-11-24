@@ -3471,7 +3471,6 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o,log_tag_const_i_NORM,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_app.c.o,_ir_bool_bit,l
 objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o
--r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_cc_ir_fastcopy_combo_held,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_matrix_col_relase,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,gpio_hw_direction_output,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_matrix_key_init,pl
@@ -3493,6 +3492,8 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_key_matrix_sleep,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,memset,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,memcmp,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_cc_ir_fastcopy_active,l
+-r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_cc_ir_fastcopy_key_request,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_cc_ir_fastcopy_keys_released,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,app_power_get_vbat_now,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_cc_ir_fastcopy_blocks_keys,l
@@ -3506,7 +3507,6 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,sys_timeout_add,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,sys_timer_modify,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rf_send_hid_key,pl
--r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_cc_ir_fastcopy_active,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_cc_ir_fastcopy_process,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,__local_irq_disable,
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,__local_irq_enable,
@@ -3533,7 +3533,6 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rckey_active_set,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_key_init,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rckey_idle_query,pl
--r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,rc_cc_ir_fastcopy_key_request,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,battery_low_led_start,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,RGB_CT,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_key.c.o,ATV_STEP,pl
@@ -3738,7 +3737,6 @@ objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,gpio_hw_direction_output,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,ir_led_set,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,rc_cc_ir_fastcopy_led_on,l
--r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,rc_cc_ir_fastcopy_combo_held,l
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,rcled_idle_query,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,bt_led_mode,pl
 -r=objs/apps/app/src/mbox_flash/remotecontrol/rc_led.c.o,int_gy_sleep_timer,pl

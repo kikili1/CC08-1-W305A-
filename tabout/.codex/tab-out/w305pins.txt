@@ -1,11 +1,11 @@
-source=CC08-1(W305A)-V1.2.PcbDoc
+source=CC08-1(W305A)-V1.3.PcbDoc
 format=ole-pcbdoc
 chip=W305
 pin_count=24
 
 1	PA0	R2
-2	BTRF	ANT	// PCB pin 2 marked PB1, fixed to BTRF
-3	VSS	C0-GND	// PCB pin 3 marked BTRF, fixed to VSS
+2	BTRF	ANT
+3	VSS	C0-GND
 4	XOSCI	XTALI
 5	XOSCO	XTALO
 6	PA15	R3
@@ -25,5 +25,5 @@ pin_count=24
 20	PB5	IR_RECE
 21	VPWR	VBAT
 22	IOVDD	VBAT
-23	PB2	C5	// PCB pin 23 marked PA0, fixed to PB2
+23	PB2	INT
 24	PB1	R5

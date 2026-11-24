@@ -5,7 +5,7 @@
 
 extern u8 RGB_CT;
 #define ROW_MAX	6
-#define COW_MAX	5
+#define COW_MAX	4
 #define COW_ADK               1
 
 #define KEYBOARD_REPORT_ID          0x1
@@ -22,17 +22,16 @@ static u8 rckey_row[] = {
     IO_PORTA_06,    //R1
     IO_PORTA_00,    //R2
     IO_PORTA_15,    //R3
-    IO_PORTA_14,    //R4
+    IO_PORTA_14,    //R4、、--
     IO_PORTB_01,    //R5
 };
 static u8 rckey_col[] = { //normal io; C0 is GND/COW_ADK special column, not a normal GPIO
     //PCB C0-GND   //C0
 
     IO_PORTA_02,    //C1
-    IO_PORTA_12,    //C2
+    IO_PORTA_12,    //C2++
     IO_PORTA_11,    //C3
     IO_PORTA_13,    //C4
-    IO_PORTB_02,    //C5  PCB pin 23 marked PA0, fixed to PB2
 };
 
 void rc_matrix_key_init(void);
@@ -251,41 +250,34 @@ void rc_key_matrix_sleep(void);
 
 
 #define PN_K	0x8000
-/*****************功能按键*************start**/
-#ifdef TCFG_FCC_SINGLE
-#define K_FCC_SINGLE  K_vol_up  //上电触发单载波产测按键
-#endif
-#define K_Pair1_key1   K_back   //配对方式1中的按键1
-#define K_Pair1_key2   K_home   //配对方式1中的按键2
-/*****************功能按键**************end**/
 
 /*****************此次工程按键***********start***/
 
-#define K_1	0x001E  //07
-#define K_2	0x001F  //07
 #define K_3	0x0020  //07
-#define K_4	0x0021  //07
+#define K_2	0x001F  //07
+#define K_1	0x001E  //07
 #define K_5	0x0022  //07
+#define K_4	0x0021  //07
 #define K_6	0x0023  //07
-#define K_7	0x0024  //07
-#define K_8	0x0025  //07
 #define K_9	0x0026  //07
+#define K_8	0x0025  //07
+#define K_7	0x0024  //07
 #define K_0	0x0027  //07
-#define K_voice	K_MIC   //保留语音键原有状态机，F10由独立一次性HID报告发送
+#define K_voice	0x0043  //07
 #define K_back	0x1224  //0C
 #define K_up	0x1042  //0C
 #define K_left	0x1044  //0C
-#define K_ok	0x1041  //0C
 #define K_right	0x1045  //0C
+#define K_ok	0x1041  //0C
 #define K_down	0x1043  //0C
 #define K_vol_down	0x10EA  //0C
 #define K_home	0x1223  //0C
 #define K_vol_up	0x10E9  //0C
 #define K_ch_down	0x109D  //0C
+#define K_mouse	0x5002  //virtual mouse; source BLE null
 #define K_ch_up	0x109C  //0C
 #define K_S1	0xFF01  //BLE unresolved placeholder; preserve IR-learning target identity
 #define K_S2	0xFF02  //BLE unresolved placeholder; preserve IR-learning target identity
-#define K_S24	0x5002  //BLE unresolved placeholder; preserve mouse-key semantics
 /*****************此次工程按键***************end**/
 
 /*****************功能按键*************start**/

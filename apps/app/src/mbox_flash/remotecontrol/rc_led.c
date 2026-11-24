@@ -464,16 +464,19 @@ u8 Connect_led_set(u8 en)
 {
 	if(en)
 	{
-		gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_13),en);
-		gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_15),!en);
+		gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_12),en);
+		gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_14),!en);
 	}
 	
 	return en;
 }
 void ir_led_set(u8 en)
 {
-	gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_13),en);
-	gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_15),!en);
+	if(en)
+	{
+		gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_12),en);
+		gpio_hw_direction_output(IO_PORT_SPILT(IO_PORTA_14),!en);
+	}
 }
 #if TCFG_RGB_ENABLE
 static void r_led_set(u8 en)
