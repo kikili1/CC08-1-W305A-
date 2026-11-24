@@ -14,7 +14,6 @@ History		: Author      Date                 Ver       Note
 #define _APP_IR_H_
 
 #define TOTAL_IR_KEY   3
-#define IR_TX_PIN	IO_PORTA_00
 #define HL_LONG		6
 #define IR_CUST_CODE0			0x08
 #define IR_CUST_CODE1			0xf7

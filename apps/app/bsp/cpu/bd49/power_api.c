@@ -4,6 +4,9 @@
 #include "audio.h"
 #include "gpio.h"
 #include "app_config.h"
+#if TCFG_GYRO_ENABLE
+#include "rc_gyro.h"
+#endif
 
 #define PORT_WKUP_FILTER PORT_FLT_128us
 
@@ -119,6 +122,22 @@ struct _p33_io_edge_wakeup_config port1 = {
 };
 #endif
 
+#if TCFG_GYRO_ENABLE
+static void gyro_int1_edge(P33_IO_WKUP_EDGE edge)
+{
+    (void)edge;
+    gyro_motion_signal();
+}
+
+static struct _p33_io_edge_wakeup_config gyro_int1_wakeup = {
+    .gpio = GYRO_INT_WAKEUP_PIN,
+    .pullup_down_enable = 0,
+    .filter = PORT_WKUP_FILTER,
+    .edge = RISING_EDGE,
+    .callback = gyro_int1_edge,
+};
+#endif
+
 void power_io_wakeup_init(void)
 {
     p33_io_wakeup_port_init(&port0);
@@ -127,6 +146,11 @@ void power_io_wakeup_init(void)
     p33_io_wakeup_port_init(&port3);
     p33_io_wakeup_port_init(&port4);
     p33_io_wakeup_port_init(&port5);
+#if TCFG_GYRO_ENABLE
+    gpio_set_mode(IO_PORT_SPILT(GYRO_INT_WAKEUP_PIN), PORT_INPUT_PULLDOWN_100K);
+    p33_io_wakeup_port_init(&gyro_int1_wakeup);
+    p33_io_wakeup_enable(GYRO_INT_WAKEUP_PIN, 0);
+#endif
 #if TESTBOX_UART_UPDATE_EN
     p33_io_wakeup_port_init(&port1);
 #endif

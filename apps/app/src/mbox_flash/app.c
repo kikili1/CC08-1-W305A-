@@ -291,6 +291,7 @@ void app_ble_rc_ctrl(void)
     sys_read_vm_powerup();
     #if TCFG_GYRO_ENABLE
     #include "rc_gyro.h"
+    gyro_motion_boot_resume();
     system_gyro_initi_matrix();
     #endif
     /* key */

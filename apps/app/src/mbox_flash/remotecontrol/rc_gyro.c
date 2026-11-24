@@ -32,6 +32,7 @@
 #include "rc_led.h"
 #if(TCFG_GYRO_ENABLE)
 #include "app_gyro_lib.h"
+#include "asm/power_interface.h"
 
 #define LOG_TAG_CONST       NORM
 #define LOG_TAG             "[RC_GYRO]"
@@ -89,6 +90,237 @@ static u16 const Gyro_Initial_Tab_330[] = {//.b  agd8 agd2 330
 
 #define GY_3CHANNEL_6881	0
 
+#define IMU_WHO_AM_I       0x0f
+#define IMU_CTRL1_XL       0x10
+#define IMU_CTRL3_C        0x12
+#define IMU_CTRL6_C        0x15
+#define IMU_WAKE_UP_SRC    0x1b
+#define IMU_TAP_CFG        0x58
+#define IMU_TAP_CFG0       0x56
+#define IMU_TAP_CFG2       0x5a
+#define IMU_WAKE_UP_THS    0x5b
+#define IMU_WAKE_UP_DUR    0x5c
+#define IMU_MD1_CFG        0x5e
+#define IMU_INT1_WU        BIT(5)
+#define IMU_WU_IA          BIT(3)
+#define IMU_XL_LOW_POWER   BIT(4)
+
+/* Let three 26 Hz samples pass before routing the initial slope to INT1. */
+#define MOTION_SETTLE_MS   120
+
+static volatile u16 motion_settle_timer;
+static volatile u8 motion_armed;
+static volatile u8 motion_edge;
+static volatile bool motion_resuming;
+static bool motion_arm_failed;
+
+static bool gyro_motion_supported(u8 id)
+{
+    return id == 0x69 || id == 0x6a || id == 0x6c;
+}
+
+static int gyro_motion_write(u8 addr, u8 reg, u8 value)
+{
+    int err = gyro_write(&value, addr, reg, 1);
+    if (err) {
+        log_info("[MOTION] I2C write failed addr=%02x reg=%02x err=%02x\n",
+                 addr, reg, err);
+    }
+    return err;
+}
+
+static int gyro_motion_update(u8 addr, u8 reg, u8 mask, u8 bits)
+{
+    u8 value;
+    int err = gyro_read(&value, addr, reg, 1);
+    if (err) {
+        log_info("[MOTION] I2C read failed addr=%02x reg=%02x err=%02x\n",
+                 addr, reg, err);
+        return err;
+    }
+    return gyro_motion_write(addr, reg, (value & ~mask) | bits);
+}
+
+static u8 gyro_motion_disarm(u8 addr)
+{
+    u8 source = 0;
+
+    u16 settle_timer = motion_settle_timer;
+    motion_settle_timer = 0;
+    if (settle_timer) {
+        sys_timeout_del(settle_timer);
+    }
+    p33_io_wakeup_enable(GYRO_INT_WAKEUP_PIN, 0);
+    motion_armed = 0;
+    motion_edge = 0;
+
+    /* Read the status while INT1 is still routed to clear the hardware latch. */
+    if (gyro_read(&source, addr, IMU_WAKE_UP_SRC, 1)) {
+        source = 0;
+        log_info("[MOTION] wake source read failed addr=%02x\n", addr);
+    }
+    gyro_motion_update(addr, IMU_MD1_CFG, IMU_INT1_WU, 0);
+    gyro_motion_write(addr, IMU_CTRL1_XL, 0);
+    gyro_motion_update(addr, IMU_CTRL6_C, IMU_XL_LOW_POWER, 0);
+    return source;
+}
+
+void gyro_motion_boot_resume(void)
+{
+    bool port_wake = is_wakeup_source(PWR_WK_REASON_PORT_EDGE);
+    u8 pb2 = gpio_read(GYRO_INT_WAKEUP_PIN);
+    log_info("[MOTION] boot port_edge=%u PB2=%u\n", port_wake, pb2);
+    if (!port_wake && !pb2) {
+        return;
+    }
+
+    /* Soft power-off resets the MCU while the IMU can retain its latched INT1. */
+    static const u8 addresses[] = {0xd4, 0xd6};
+    soft_iic_init();
+    for (u8 i = 0; i < sizeof(addresses); i++) {
+        u8 addr = addresses[i];
+        u8 id;
+        u8 route;
+        if (!gyro_read(&id, addr, IMU_WHO_AM_I, 1) && gyro_motion_supported(id) &&
+            !gyro_read(&route, addr, IMU_MD1_CFG, 1) && (route & IMU_INT1_WU)) {
+            u8 source = gyro_motion_disarm(addr);
+            log_info("[MOTION] boot who=%02x addr=%02x src=%02x motion=%u PB2_after=%u\n",
+                     id, addr, source, port_wake && pb2 && !!(source & IMU_WU_IA),
+                     gpio_read(GYRO_INT_WAKEUP_PIN));
+            return;
+        }
+    }
+    log_info("[MOTION] boot no routed wake source found\n");
+}
+
+void gyro_motion_signal(void)
+{
+    if (motion_armed && !motion_edge) {
+        motion_edge = 1;
+        post_msg(1, MSG_GYRO_WAKEUP);
+    }
+}
+
+static bool gyro_motion_pending(void)
+{
+    return motion_armed && (motion_edge || gpio_read(GYRO_INT_WAKEUP_PIN));
+}
+
+bool gyro_motion_can_softoff(void)
+{
+    return !motion_resuming && !motion_settle_timer && !gyro_motion_pending();
+}
+
+static void gyro_motion_fail(void)
+{
+    gyro_motion_disarm(iic_Waddr);
+    motion_arm_failed = true;
+    log_info("[MOTION] arm failed who=%02x addr=%02x PB2=%u\n",
+             gy_id, iic_Waddr, gpio_read(GYRO_INT_WAKEUP_PIN));
+}
+
+static void gyro_motion_arm_int1(void *priv)
+{
+    (void)priv;
+    if (!motion_settle_timer) {
+        return;
+    }
+    motion_settle_timer = 0;
+
+    u8 source;
+    if (gyro_read(&source, iic_Waddr, IMU_WAKE_UP_SRC, 1) ||
+        gpio_read(GYRO_INT_WAKEUP_PIN)) {
+        gyro_motion_fail();
+        return;
+    }
+
+    motion_armed = 1;
+    p33_io_wakeup_enable(GYRO_INT_WAKEUP_PIN, 1);
+    if (gyro_motion_update(iic_Waddr, IMU_MD1_CFG, IMU_INT1_WU, IMU_INT1_WU)) {
+        gyro_motion_fail();
+        return;
+    }
+    log_info("[MOTION] armed who=%02x addr=%02x PB2=%u\n",
+             gy_id, iic_Waddr, gpio_read(GYRO_INT_WAKEUP_PIN));
+}
+
+void gyro_motion_sleep(void)
+{
+    if (motion_armed || motion_settle_timer || motion_resuming || motion_arm_failed) {
+        return;
+    }
+
+    system_gyro_power_mgmt(0);
+    if (!fgy_inside || fgy_initi || id_channel != 5 || !gyro_motion_supported(gy_id)) {
+        log_info("[MOTION] no INT1 profile inside=%u init=%u channel=%u who=%02x\n",
+                 fgy_inside, fgy_initi, id_channel, gy_id);
+        return;
+    }
+
+    u8 id = 0;
+    if (gyro_read(&id, iic_Waddr, IMU_WHO_AM_I, 1) || id != gy_id) {
+        motion_arm_failed = true;
+        log_info("[MOTION] probe failed addr=%02x expected=%02x read=%02x\n",
+                 iic_Waddr, gy_id, id);
+        return;
+    }
+
+    /* 26 Hz low-power accelerometer, +/-2 g, latched active-high INT1. */
+    if (gyro_motion_update(iic_Waddr, IMU_MD1_CFG, IMU_INT1_WU, 0) ||
+        gyro_motion_update(iic_Waddr, IMU_CTRL3_C, BIT(5) | BIT(4), 0) ||
+        gyro_motion_update(iic_Waddr, IMU_CTRL6_C, IMU_XL_LOW_POWER, IMU_XL_LOW_POWER) ||
+        gyro_motion_update(iic_Waddr, IMU_WAKE_UP_THS, 0x3f, 2) ||
+        gyro_motion_update(iic_Waddr, IMU_WAKE_UP_DUR, 0x70, 0)) {
+        gyro_motion_fail();
+        return;
+    }
+
+    int err;
+    switch (gy_id) {
+    case 0x69: /* LSM6DS3 has no global event interrupt enable in TAP_CFG. */
+        err = gyro_motion_update(iic_Waddr, IMU_TAP_CFG, BIT(4) | BIT(0), BIT(0));
+        break;
+    case 0x6c: /* LSM6DSO/DSOX put the latch and interrupt enable in separate registers. */
+        err = gyro_motion_update(iic_Waddr, IMU_TAP_CFG0, 0x51, 0x41) ||
+              gyro_motion_update(iic_Waddr, IMU_TAP_CFG2, 0xe0, 0x80);
+        break;
+    default: /* LSM6DS3TR-C / LSM6DSL register layout. */
+        err = gyro_motion_update(iic_Waddr, IMU_TAP_CFG, 0xf1, 0x81);
+        break;
+    }
+
+    if (err || gyro_motion_write(iic_Waddr, IMU_CTRL1_XL, 0x20)) {
+        gyro_motion_fail();
+        return;
+    }
+    motion_settle_timer = sys_timeout_add(NULL, gyro_motion_arm_int1, MOTION_SETTLE_MS);
+    if (!motion_settle_timer) {
+        gyro_motion_fail();
+    }
+}
+
+bool gyro_motion_resume(void)
+{
+    if (!gyro_motion_pending()) {
+        return false;
+    }
+
+    motion_resuming = true;
+    u8 edge = motion_edge;
+    u8 source = gyro_motion_disarm(iic_Waddr);
+    bool detected = !!(source & IMU_WU_IA);
+    log_info("[MOTION] resume edge=%u src=%02x motion=%u mouse=%u PB2_after=%u\n",
+             edge, source, detected, fm_open, gpio_read(GYRO_INT_WAKEUP_PIN));
+
+    if (detected && fm_open) {
+        fgy_lowp = 0;
+        system_gyro_power_mgmt(1);
+    }
+    sys_gyro_open_sleep_handle();
+    motion_resuming = false;
+    return detected;
+}
+
 int system_gyro_initi_matrix(void)
 {
 	log_info("system_gyro_initi_matrix fgy_initi = %d",fgy_initi);
@@ -105,6 +337,7 @@ int system_gyro_initi_matrix(void)
 		soft_iic_init();
 		system_gyro_power_save_read();
 		system_gyro_power_mgmt(1);
+		sys_gyro_open_sleep_handle();
 	}
 	return 0;
 }
@@ -195,7 +428,10 @@ void system_gyro_initial(void)
 					break;
 				case 6:
 				case 7:
-					if(gy_id==0xd3 || gy_id==0xd5 || gy_id==0xd7)
+                    if (id_channel == 7 && gyro_motion_supported(gy_id)) {
+                        id_channel = id_channel_pre = 5;
+                        Gyro_initi_tab = Gyro_Initial_Tab_S2;
+                    } else if(gy_id==0xd3 || gy_id==0xd5 || gy_id==0xd7)
 						fgyros_3chanel =1;
 					else id_channel++;//err
 					break;
@@ -321,13 +557,21 @@ void system_gyro_power_mgmt(u8 mode)
 {
 	u8 reg_dat[12],id_reg;
 
+    if (mode) {
+        motion_arm_failed = false;
+        if (motion_armed || motion_settle_timer) {
+            gyro_motion_disarm(iic_Waddr);
+            fgy_lowp = 0;
+        }
+    }
+
 	if(gy_pwg==mode || !fgy_inside)
 	{
 		//printf("system_gyro_power_mgmt same\n");
 		return;
 	}
 	if(int_gy_sleep_timer)
-		sys_timer_del(int_gy_sleep_timer);
+		sys_timeout_del(int_gy_sleep_timer);
 	int_gy_sleep_timer =0;
 	log_info("system_gyro_power_mgmt %d",mode);
 	gy_pwg =mode;
@@ -1051,7 +1295,7 @@ static u8 gyro_write(u8 *buf, u8 addr,u8 gy_reg, u8 len)
 		 soft_iic_stop();
 		 return 0xfe;
 		}
-	soft_iic_tx_byte(gy_reg);
+	ret = soft_iic_tx_byte(gy_reg);
 	if (!ret)
 		{
 		 soft_iic_stop();
@@ -1078,7 +1322,7 @@ static u8 gyro_read(u8 *buf, u8 addr,u8 gy_reg, u8 len)
 		 soft_iic_stop();
 		 return 0xfe;
 		}
-	soft_iic_tx_byte(gy_reg);
+	ret = soft_iic_tx_byte(gy_reg);
 	if (!ret)
 		{
 		 soft_iic_stop();
@@ -1120,7 +1364,7 @@ void gyro_debug_state_print(void)
 }
 static u8 gyro_idle_query(void)
 {
-	return !is_gyro_active;
+	return !is_gyro_active && !gyro_motion_pending();
 }
 REGISTER_LP_TARGET(gyro_lp_target) = {
     .name = "gyro_lp",

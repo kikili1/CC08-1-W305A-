@@ -143,7 +143,12 @@ void sys_softoff_handle(void)
 		return;
 	}
 #if TCFG_GYRO_ENABLE
-	system_gyro_power_mgmt(0);
+    gyro_motion_sleep();
+    if (!gyro_motion_can_softoff()) {
+        int_sys_off_timer = sys_timeout_add(NULL, sys_softoff_handle, 150);
+        return;
+    }
+    log_info("[MOTION] softoff PB2=%u\n", gpio_read(GYRO_INT_WAKEUP_PIN));
 #endif
 	sys_softoff();
 }
@@ -175,6 +180,15 @@ static void sys_power_off_time(void)
 		sys_timer_modify(int_sys_off_timer,timer);
 	else int_sys_off_timer =sys_timeout_add(NULL,sys_softoff_handle,timer);
 }
+
+#if TCFG_GYRO_ENABLE
+void rc_gyro_wakeup_handle(void)
+{
+    if (gyro_motion_resume()) {
+        sys_power_off_time();
+    }
+}
+#endif
 
 static u16 int_gy_key_pause_timer =0;
 static void gy_key_pause_handle(void)
@@ -386,11 +400,18 @@ void sys_power_led_pmu(void)
 }
 
 #if TCFG_GYRO_ENABLE
+static void gyro_sleep_timeout(void *priv)
+{
+    (void)priv;
+    int_gy_sleep_timer = 0;
+    gyro_motion_sleep();
+}
+
 void sys_gyro_open_sleep_handle(void)//更新gyro休眠时间
 {
 		if(int_gy_sleep_timer)
 			sys_timer_modify(int_gy_sleep_timer,SYS_GY_SLEEP_TIME);
-		else int_gy_sleep_timer =sys_timeout_add((void *)0, system_gyro_power_mgmt, SYS_GY_SLEEP_TIME);//gy sleep 30s
+		else int_gy_sleep_timer =sys_timeout_add(NULL, gyro_sleep_timeout, SYS_GY_SLEEP_TIME);//gy sleep 30s
 }
 #endif
 

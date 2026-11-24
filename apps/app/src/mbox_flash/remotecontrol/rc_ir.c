@@ -99,6 +99,7 @@ void timer5_ir_init(void)
 
 void system_ir_initial(void)
 {
+#if !TCFG_UART0_ENABLE || (TCFG_UART_TX_PORT != IR_TX_PIN)
     log_info("func:%s(), line:%d\n", __func__, __LINE__);
 
     pwm_config = &_pwm_config;
@@ -119,6 +120,7 @@ void system_ir_initial(void)
 	is_ir_active =0;
 
 	IR_KEY_NUM =0;
+#endif
 }
 void system_ir_vm_initial(void)
 {
@@ -180,6 +182,9 @@ void ir_tran_PWM_OFF(void)
 //-------------------------------------------------------
 void system_ir_check(void)
 {
+#if TCFG_UART0_ENABLE && (TCFG_UART_TX_PORT == IR_TX_PIN)
+  return;
+#else
   u8 array[2],i;
   if(fir_study)
 	 return;
@@ -205,6 +210,7 @@ void system_ir_check(void)
 		//else system_ir_only_send(0x01,0xfe,0x40);
 	}
   }
+#endif
 }
 
 void IR_STUDY_BUF_set(u8 r,u8 buf)
@@ -228,6 +234,9 @@ void IR_STUDY_BUF_set(u8 r,u8 buf)
 
 u8 system_ir_only_send(u8 add1,u8 add2,u8 IR_DAT)
 {
+#if TCFG_UART0_ENABLE && (TCFG_UART_TX_PORT == IR_TX_PIN)
+ return 0;
+#else
  if(IR_DAT==0xfe)
 	return 0xfe;
  if(fir_study || fir_star)//????????????????????????????????????????????????
@@ -269,6 +278,7 @@ log_info("system_ir_only_send\n");
  gptimer_set_resolution(timer_tid,5000);
  gptimer_start(timer_tid);
  return 0;
+#endif
 }
 
 

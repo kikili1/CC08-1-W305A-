@@ -258,6 +258,7 @@ enum {
     MSG_BLE_APP_UPDATE_START,       /*APP_BLE升级*/
     MSG_UART_TESTBOX_UPDATE_START, /*蓝牙测试盒UART升级*/
     MSG_RC_WAKEUP,
+    MSG_GYRO_WAKEUP,
     MSG_COMMON_MAX,//common最大消息
     NO_MSG = 0x0fff,
 };

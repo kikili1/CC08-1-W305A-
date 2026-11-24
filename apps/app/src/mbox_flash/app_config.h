@@ -2,6 +2,9 @@
 #define __APP_CONFIG_H__
 
 #include "app_modules.h"
+#ifndef __LD__
+#include "gpio_hw.h"
+#endif
 
 #define ENABLE_THIS_MOUDLE				    1
 #define DISABLE_THIS_MOUDLE				    0
@@ -25,15 +28,24 @@
 #define CPU_USE_CACHE_WAY_NUMBER            4//cache_way范围:2~4
 
 /*---------UART Configuration---------------*/
-#define TCFG_UART_TX_PORT  				    IO_PORT_DP     //串口打印发送脚配置
+/* V1.3 uses USBDP/USBDM for gyro I2C. The bench build reuses IR_SEND (PB6) for UART TX. */
+#define TCFG_UART_TX_PORT                   IO_PORTB_06
 // #define TCFG_UART_RX_PORT  				    IO_PORTA_06     //串口打印接收脚配置
 #define TCFG_UART_BAUDRATE  				1000000         //串口打印波特率配置
 
 #define TCFG_UART0_ENABLE                   DISABLE_THIS_MOUDLE
 
 #define TCFG_GYRO_ENABLE                    ENABLE_THIS_MOUDLE
+
+#define GYRO_INT_WAKEUP_PIN                 IO_PORTB_02
 #define TCFG_IR_ENABLE                      ENABLE_THIS_MOUDLE
+#define IR_TX_PIN                           IO_PORTB_06//IR_SEND
+#define IR_RX_PIN                           IO_PORTB_05
+#if !defined(__LD__) && TCFG_UART0_ENABLE && (TCFG_UART_TX_PORT == IR_TX_PIN)
+#define TCFG_IR_STUDY_ENABLE                DISABLE_THIS_MOUDLE
+#else
 #define TCFG_IR_STUDY_ENABLE                ENABLE_THIS_MOUDLE
+#endif
 #define TCFG_CODE_SWITCH                    DISABLE_THIS_MOUDLE
 
 #define TCFG_RGB_ENABLE                     DISABLE_THIS_MOUDLE
@@ -53,9 +65,6 @@
 // #define CONNECT_LED_PIN                     IO_PORT_DM//LED+ LED1/LEDR
 #define IR_LED_PIN                          IO_PORT_DM//C1+
 
-
-#define IR_TX_PIN                           IO_PORTB_06//IR_SEND
-#define IR_RX_PIN                           IO_PORTB_05
 
 /*---------KEY Configuration----------------*/
 #define KEY_DOUBLE_CLICK_EN		            DISABLE//使能按键多击

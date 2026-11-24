@@ -16,6 +16,7 @@ void MOT_led_set(u8 en);
 void blt_led_set(void);
 void sys_write_sleep(void);
 void sys_power_led_pmu(void);
+void rc_gyro_wakeup_handle(void);
 void cover_led_high_low(void);
 int app_power_led_handler(void);
 void battery_low_led_start(void);

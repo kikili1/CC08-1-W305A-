@@ -157,6 +157,9 @@ void rf_rc_app()
     log_info("rf_controller\n");
 
     while (1) {
+#if TCFG_GYRO_ENABLE
+        rc_gyro_wakeup_handle();
+#endif
         sys_power_led_pmu();
         if (!fmic_vld && !fir_star && !rc_cc_ir_fastcopy_active()) {
             /* putchar('s'); */
@@ -169,6 +172,11 @@ void rf_rc_app()
 
         err = get_msg(2, &msg[0]);
         switch (msg[0]) {
+#if TCFG_GYRO_ENABLE
+        case MSG_GYRO_WAKEUP:
+            rc_gyro_wakeup_handle();
+            break;
+#endif
 #if BLE_EN
         case MSG_RC_WAKEUP:
             hogp_wakeup_reconnect();

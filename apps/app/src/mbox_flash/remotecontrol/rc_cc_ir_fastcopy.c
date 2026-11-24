@@ -363,4 +363,49 @@ void rc_cc_ir_fastcopy_process(void)
         rc_cc_ir_fastcopy_exit();
 }
 
+#else
+
+u8 rc_cc_ir_fastcopy_active(void)
+{
+    return 0;
+}
+
+u8 rc_cc_ir_fastcopy_blocks_keys(void)
+{
+    return 0;
+}
+
+u8 rc_cc_ir_fastcopy_led_on(void)
+{
+    return 0;
+}
+
+void rc_cc_ir_fastcopy_enter_request(u8 role)
+{
+    (void)role;
+}
+
+void rc_cc_ir_fastcopy_key_request(u8 key)
+{
+    (void)key;
+}
+
+void rc_cc_ir_fastcopy_keys_released(void)
+{
+}
+
+void rc_cc_ir_fastcopy_tick(void)
+{
+}
+
+void rc_cc_ir_fastcopy_process(void)
+{
+}
+
+void rc_cc_ir_fastcopy_rx_pulse(u8 mark, u32 duration_us)
+{
+    (void)mark;
+    (void)duration_us;
+}
+
 #endif

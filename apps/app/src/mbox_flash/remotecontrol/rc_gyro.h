@@ -21,6 +21,12 @@ extern u16 gyro_initi_timer,gy_scan_timer;
 extern int int_gy_sleep_timer;
 extern u16 min_interval;
 
+void gyro_motion_boot_resume(void);
+void gyro_motion_signal(void);
+void gyro_motion_sleep(void);
+bool gyro_motion_can_softoff(void);
+bool gyro_motion_resume(void);
+
 int system_gyro_initi_matrix(void);
 void system_gyro_initial(void);
 void system_gyro_power_mgmt(u8 mode);
